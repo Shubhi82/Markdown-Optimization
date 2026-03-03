@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from pathlib import Path
 
 # --------------------------------------------------
+
 # Page config
 # --------------------------------------------------
 st.set_page_config(
