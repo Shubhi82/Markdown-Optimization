@@ -5,1078 +5,849 @@ import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 
-# ──────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 # PAGE CONFIG
-# ──────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="Retail Markdown War Room",
-    page_icon="📊",
+    page_title="Retail Markdown Insights",
+    page_icon="📦",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ──────────────────────────────────────────────────────
-# GLOBAL STYLES
-# ──────────────────────────────────────────────────────
-st.markdown("""
+# ─────────────────────────────────────────────
+# COLOR PALETTE  — single teal/slate palette
+# ─────────────────────────────────────────────
+C = {
+    "primary":   "#0F7B6C",
+    "accent":    "#14A698",
+    "warn":      "#B45309",
+    "danger":    "#C0392B",
+    "bg_page":   "#F8FAFC",
+    "bg_card":   "#FFFFFF",
+    "bg_subtle": "#F1F5F9",
+    "border":    "#E2E8F0",
+    "text_main": "#1E293B",
+    "text_sub":  "#475569",
+    "text_mute": "#94A3B8",
+}
+
+CHART_COLORS = ["#0F7B6C", "#14A698", "#1FB8A8", "#4DD0C4", "#7DE1D8"]
+
+st.markdown(f"""
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-  html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
+  html, body, [class*="css"] {{
+    font-family: 'Inter', sans-serif;
+    background-color: {C['bg_page']};
+    color: {C['text_main']};
+  }}
 
-  h1, h2, h3 { font-family: 'Playfair Display', serif !important; }
+  .page-title {{
+    font-size: 1.75rem; font-weight: 700;
+    color: {C['text_main']}; margin-bottom: 2px;
+  }}
+  .page-subtitle {{
+    font-size: 0.95rem; color: {C['text_sub']};
+    font-weight: 400; margin-bottom: 0;
+  }}
 
-  .war-room-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.8rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, #F5A623, #E8441A);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0;
-    line-height: 1.1;
-  }
-  .war-room-sub {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 1.05rem;
-    color: #9ca3af;
-    font-weight: 300;
-    letter-spacing: 0.04em;
-    margin-top: 4px;
-  }
-
-  /* Story cards */
-  .story-card {
-    background: #1a1a2e;
-    border: 1px solid #2d2d4a;
-    border-radius: 14px;
-    padding: 24px 28px;
-    margin-bottom: 16px;
-  }
-  .story-chapter {
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: #F5A623;
-    margin-bottom: 6px;
-  }
-  .story-headline {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #f1f5f9;
-    margin-bottom: 10px;
-    line-height: 1.3;
-  }
-  .story-body {
-    color: #94a3b8;
-    font-size: 0.95rem;
-    line-height: 1.7;
-  }
-  .story-body strong { color: #e2e8f0; }
-
-  /* KPI chips */
-  .kpi-row { display: flex; gap: 12px; margin: 18px 0; flex-wrap: wrap; }
-  .kpi-chip {
-    background: #0f172a;
-    border: 1px solid #334155;
+  .story-intro {{
+    background: {C['bg_card']};
+    border: 1px solid {C['border']};
+    border-left: 4px solid {C['primary']};
     border-radius: 8px;
-    padding: 12px 18px;
-    text-align: center;
-    min-width: 110px;
-  }
-  .kpi-val {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.55rem;
-    font-weight: 700;
-    color: #F5A623;
-    display: block;
-  }
-  .kpi-label {
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #64748b;
-    margin-top: 2px;
-    display: block;
-  }
+    padding: 20px 24px; margin-bottom: 20px;
+  }}
+  .story-label {{
+    font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: {C['primary']}; margin-bottom: 4px;
+  }}
+  .story-title {{
+    font-size: 1.2rem; font-weight: 700;
+    color: {C['text_main']}; margin-bottom: 8px; line-height: 1.4;
+  }}
+  .story-body {{
+    font-size: 0.9rem; color: {C['text_sub']}; line-height: 1.7;
+  }}
+  .story-body strong {{ color: {C['text_main']}; }}
 
-  /* Outcome boxes */
-  .outcome-before {
-    background: linear-gradient(135deg, #2d1515, #1a0a0a);
-    border-left: 3px solid #ef4444;
-    border-radius: 0 10px 10px 0;
-    padding: 16px 20px;
-  }
-  .outcome-after {
-    background: linear-gradient(135deg, #0d2d1e, #051a10);
-    border-left: 3px solid #22c55e;
-    border-radius: 0 10px 10px 0;
-    padding: 16px 20px;
-  }
-  .outcome-predict {
-    background: linear-gradient(135deg, #1a1f2e, #0d1225);
-    border-left: 3px solid #3b82f6;
-    border-radius: 0 10px 10px 0;
-    padding: 16px 20px;
-  }
-  .outcome-label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-  .outcome-text {
-    color: #cbd5e1;
-    font-size: 0.9rem;
-    line-height: 1.6;
-  }
-  .outcome-text strong { color: #f8fafc; }
+  .box-row {{ display: flex; gap: 12px; margin: 16px 0; }}
+  .box-problem {{
+    flex: 1; background: #FEF2F2;
+    border: 1px solid #FECACA; border-radius: 8px; padding: 14px 16px;
+  }}
+  .box-result {{
+    flex: 1; background: #F0FDF4;
+    border: 1px solid #BBF7D0; border-radius: 8px; padding: 14px 16px;
+  }}
+  .box-recommend {{
+    flex: 1; background: #EFF6FF;
+    border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px 16px;
+  }}
+  .box-label {{
+    font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 5px;
+  }}
+  .box-text {{
+    font-size: 0.85rem; line-height: 1.6; color: {C['text_main']};
+  }}
+  .box-text strong {{ font-weight: 600; }}
 
-  /* Timeline connector */
-  .timeline-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-  .timeline-dot {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    background: #F5A623;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; font-weight: 700; color: #0f0f1a;
-    flex-shrink: 0; margin-top: 2px;
-  }
-  .timeline-content { flex: 1; }
-  .timeline-title {
-    font-weight: 600; color: #f1f5f9; font-size: 0.95rem; margin-bottom: 4px;
-  }
-  .timeline-desc { color: #64748b; font-size: 0.875rem; line-height: 1.5; }
+  .insight {{
+    background: {C['bg_subtle']};
+    border: 1px solid {C['border']};
+    border-left: 3px solid {C['primary']};
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px; margin-top: 16px;
+  }}
+  .insight-label {{
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: {C['primary']}; margin-bottom: 4px;
+  }}
+  .insight-text {{
+    font-size: 0.88rem; color: {C['text_sub']}; line-height: 1.6;
+  }}
+  .insight-text strong {{ color: {C['text_main']}; }}
 
-  /* Insight callout */
-  .insight-box {
-    background: linear-gradient(135deg, #1e1b4b, #0f0c2e);
-    border: 1px solid #4338ca40;
-    border-radius: 12px;
-    padding: 18px 22px;
-    margin: 14px 0;
-  }
-  .insight-tag {
-    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em;
-    text-transform: uppercase; color: #818cf8; margin-bottom: 6px;
-  }
-  .insight-text { color: #c7d2fe; font-size: 0.92rem; line-height: 1.65; }
+  .stage-pill {{
+    display: inline-block;
+    background: {C['primary']}18; color: {C['primary']};
+    font-size: 0.75rem; font-weight: 600;
+    padding: 2px 10px; border-radius: 20px; margin: 2px;
+  }}
 
-  /* Plotly override */
-  .js-plotly-plot .plotly { border-radius: 10px; }
-
-  /* Tab styling */
-  .stTabs [data-baseweb="tab"] {
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.85rem !important;
-    font-weight: 500 !important;
-  }
-  div[data-testid="metric-container"] {
-    background: #1a1a2e;
-    border: 1px solid #2d2d4a;
-    border-radius: 10px;
-    padding: 14px 18px;
-  }
+  div[data-testid="metric-container"] {{
+    background: {C['bg_card']};
+    border: 1px solid {C['border']};
+    border-radius: 8px; padding: 12px 16px;
+  }}
+  [data-testid="stMetricValue"] {{ color: {C['primary']} !important; font-weight: 700; }}
+  [data-testid="stMetricLabel"] {{ color: {C['text_sub']}; font-size: 0.8rem; }}
 </style>
 """, unsafe_allow_html=True)
 
-CHART_THEME = {
-    "paper_bgcolor": "#0f0f1a",
-    "plot_bgcolor": "#0f0f1a",
-    "font_color": "#94a3b8",
-    "gridcolor": "#1e293b",
-}
-
-def styled_chart(fig, height=380):
+# ─────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────
+def chart(fig, height=360):
     fig.update_layout(
-        paper_bgcolor=CHART_THEME["paper_bgcolor"],
-        plot_bgcolor=CHART_THEME["plot_bgcolor"],
-        font=dict(color=CHART_THEME["font_color"], family="DM Sans"),
+        paper_bgcolor="white", plot_bgcolor="white",
+        font=dict(color=C["text_sub"], family="Inter", size=12),
         height=height,
-        margin=dict(l=20, r=20, t=45, b=20),
+        margin=dict(l=10, r=10, t=40, b=10),
+        title_font=dict(color=C["text_main"], size=13, family="Inter"),
     )
-    fig.update_xaxes(gridcolor=CHART_THEME["gridcolor"], zeroline=False)
-    fig.update_yaxes(gridcolor=CHART_THEME["gridcolor"], zeroline=False)
+    fig.update_xaxes(gridcolor="#F1F5F9", zeroline=False, linecolor=C["border"])
+    fig.update_yaxes(gridcolor="#F1F5F9", zeroline=False, linecolor=C["border"])
     return fig
 
-PALETTE = ["#F5A623", "#E8441A", "#3b82f6", "#22c55e", "#a855f7", "#06b6d4"]
+def slabel(s):
+    return {"M1":"Stage 1","M2":"Stage 2","M3":"Stage 3","M4":"Stage 4"}.get(s, s)
 
-# ──────────────────────────────────────────────────────
-# LOAD & COMPUTE
-# ──────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
+# LOAD DATA
+# ─────────────────────────────────────────────
 @st.cache_data
-def load_and_compute():
-    csv_path = Path(__file__).parent / "src" / "synthetic_markdown_dataset.csv"
-    df = pd.read_csv(csv_path)
-
-    records = []
-    for _, row in df.iterrows():
-        stock = row["Stock_Level"]
-        for stage, md_col, sales_col in [
-            ("M1", "Markdown_1", "Sales_After_M1"),
-            ("M2", "Markdown_2", "Sales_After_M2"),
-            ("M3", "Markdown_3", "Sales_After_M3"),
-            ("M4", "Markdown_4", "Sales_After_M4"),
+def load():
+    path = Path(__file__).parent / "src" / "synthetic_markdown_dataset.csv"
+    df = pd.read_csv(path)
+    rows = []
+    for _, r in df.iterrows():
+        stock = r["Stock_Level"]
+        for stage, mc, sc in [
+            ("M1","Markdown_1","Sales_After_M1"),
+            ("M2","Markdown_2","Sales_After_M2"),
+            ("M3","Markdown_3","Sales_After_M3"),
+            ("M4","Markdown_4","Sales_After_M4"),
         ]:
-            markdown = row[md_col]
-            sales = row[sales_col]
-            price_after = row["Original_Price"] * (1 - markdown)
-            revenue = price_after * sales
-            sell_through = sales / stock if stock > 0 else 0.0
-            records.append({
-                "Product_ID": row["Product_ID"],
-                "Category": row["Category"],
-                "Season": row["Season"],
-                "Product_Name": row["Product_Name"],
-                "Brand": row["Brand"],
+            md = r[mc]; sales = r[sc]
+            rev = r["Original_Price"] * (1 - md) * sales
+            rows.append({
+                "Product_ID": r["Product_ID"],
+                "Category": r["Category"],
+                "Season": r["Season"],
+                "Product_Name": r["Product_Name"],
+                "Brand": r["Brand"],
                 "Stage": stage,
-                "Markdown": markdown,
+                "Markdown": md,
                 "Sales": sales,
-                "Revenue": revenue,
-                "Sell_through": sell_through,
-                "Historical_Sales": row["Historical_Sales"],
-                "Original_Price": row["Original_Price"],
-                "Optimal_Discount": row["Optimal Discount"],
+                "Revenue": rev,
+                "Sell_through": sales / stock if stock > 0 else 0,
+                "Historical_Sales": r["Historical_Sales"],
+                "Original_Price": r["Original_Price"],
+                "Optimal_Discount": r["Optimal Discount"],
                 "Stock_Level": stock,
-                "Customer_Ratings": row["Customer Ratings"],
-                "Return_Rate": row["Return Rate"],
+                "Customer_Ratings": r["Customer Ratings"],
+                "Return_Rate": r["Return Rate"],
             })
-
-    mdf = pd.DataFrame(records)
-    return df, mdf
+    return df, pd.DataFrame(rows)
 
 try:
-    df_raw, mdf = load_and_compute()
+    df_raw, mdf_all = load()
 except Exception as e:
-    st.error(f"❌ Failed to load data: {e}")
+    st.error(f"Could not load data: {e}")
     st.stop()
 
-# ──────────────────────────────────────────────────────
-# SIDEBAR
-# ──────────────────────────────────────────────────────
-st.sidebar.markdown("""
-<div style='padding: 6px 0 16px 0;'>
-  <div style='font-family: Playfair Display, serif; font-size:1.15rem; color:#F5A623; font-weight:700;'>
-    📊 War Room Filters
-  </div>
-  <div style='font-size:0.78rem; color:#64748b; margin-top:3px;'>
-    Scope the stories to your business
-  </div>
-</div>
-""", unsafe_allow_html=True)
+# ─────────────────────────────────────────────
+# SIDEBAR FILTERS
+# ─────────────────────────────────────────────
+st.sidebar.markdown("### Filters")
+sel_cats    = st.sidebar.multiselect("Category", sorted(df_raw["Category"].unique()), default=sorted(df_raw["Category"].unique()))
+sel_seasons = st.sidebar.multiselect("Season",   sorted(df_raw["Season"].unique()),   default=sorted(df_raw["Season"].unique()))
+sel_brands  = st.sidebar.multiselect("Brand",    sorted(df_raw["Brand"].unique()),    default=sorted(df_raw["Brand"].unique()))
 
-all_cats = sorted(df_raw["Category"].unique())
-all_seasons = sorted(df_raw["Season"].unique())
-all_brands = sorted(df_raw["Brand"].unique())
-
-sel_cats = st.sidebar.multiselect("Category", all_cats, default=all_cats)
-sel_seasons = st.sidebar.multiselect("Season", all_seasons, default=all_seasons)
-sel_brands = st.sidebar.multiselect("Brand", all_brands, default=all_brands)
-
-# Apply filters
-filt = (
-    df_raw["Category"].isin(sel_cats) &
-    df_raw["Season"].isin(sel_seasons) &
-    df_raw["Brand"].isin(sel_brands)
-)
-df = df_raw[filt].copy()
-mdf_f = mdf[
-    mdf["Category"].isin(sel_cats) &
-    mdf["Season"].isin(sel_seasons) &
-    mdf["Brand"].isin(sel_brands)
-].copy()
+df  = df_raw[df_raw["Category"].isin(sel_cats) & df_raw["Season"].isin(sel_seasons) & df_raw["Brand"].isin(sel_brands)].copy()
+mdf = mdf_all[mdf_all["Category"].isin(sel_cats) & mdf_all["Season"].isin(sel_seasons) & mdf_all["Brand"].isin(sel_brands)].copy()
 
 if df.empty:
-    st.warning("⚠️ No data for selected filters.")
+    st.warning("No data for the selected filters. Please adjust your selection.")
     st.stop()
 
-# Compute global KPIs
-avg_hist = df["Historical_Sales"].mean()
-best_stage_revenue = mdf_f.groupby("Stage")["Revenue"].mean()
-best_stage = best_stage_revenue.idxmax()
-avg_opt_disc = mdf_f.groupby("Stage")["Markdown"].mean()[best_stage] * 100
-avg_opt_sales = mdf_f[mdf_f["Stage"] == best_stage]["Sales"].mean()
-total_lift = ((avg_opt_sales / avg_hist) - 1) * 100
+# ─────────────────────────────────────────────
+# GLOBAL KPIs
+# ─────────────────────────────────────────────
+avg_hist      = df["Historical_Sales"].mean()
+stage_rev_avg = mdf.groupby("Stage")["Revenue"].mean()
+best_stage    = stage_rev_avg.idxmax()
+best_disc     = mdf[mdf["Stage"] == best_stage]["Markdown"].mean() * 100
+best_sales    = mdf[mdf["Stage"] == best_stage]["Sales"].mean()
+total_lift    = ((best_sales / avg_hist) - 1) * 100
+best_cat      = mdf[mdf["Stage"] == best_stage].groupby("Category")["Revenue"].mean().idxmax()
 
-# Best category
-best_cat = mdf_f[mdf_f["Stage"] == best_stage].groupby("Category")["Revenue"].mean().idxmax()
-
-st.sidebar.markdown("---")
-st.sidebar.markdown(f"""
-<div style='font-size:0.78rem; color:#64748b;'>
-  <strong style='color:#94a3b8;'>Dataset scope</strong><br>
-  {len(df):,} products · {len(sel_cats)} categories<br>
-  {len(sel_seasons)} seasons · {len(sel_brands)} brands
-</div>
-""", unsafe_allow_html=True)
-
-# ──────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 # HEADER
-# ──────────────────────────────────────────────────────
-col_h1, col_h2 = st.columns([3, 1])
-with col_h1:
-    st.markdown("""
-    <div class='war-room-title'>Retail Markdown War Room</div>
-    <div class='war-room-sub'>5 questions every retail manager asks — answered with data, told as stories</div>
-    """, unsafe_allow_html=True)
+# ─────────────────────────────────────────────
+st.markdown("<div class='page-title'>📦 Retail Markdown Insights</div>", unsafe_allow_html=True)
+st.markdown("<div class='page-subtitle'>Five questions retail managers ask most — answered with data from your product range.</div>", unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 
-st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-# Global KPI bar
 k1, k2, k3, k4, k5 = st.columns(5)
-k1.metric("📦 Products Analyzed", f"{len(df):,}")
-k2.metric("🏆 Revenue-Peak Stage", best_stage)
-k3.metric("🎯 Optimal Discount", f"{avg_opt_disc:.0f}%")
-k4.metric("📈 Sales Lift vs Baseline", f"+{total_lift:.0f}%")
-k5.metric("🥇 Strongest Category", best_cat)
+k1.metric("Products Analysed",       f"{len(df):,}")
+k2.metric("Best Markdown Stage",     slabel(best_stage))
+k3.metric("Recommended Discount",    f"{best_disc:.0f}%")
+k4.metric("Sales Increase vs No MD", f"+{total_lift:.0f}%")
+k5.metric("Top Performing Category", best_cat)
+st.markdown("<br>", unsafe_allow_html=True)
 
-st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-st.divider()
-
-# ──────────────────────────────────────────────────────
-# 5 STORY TABS
-# ──────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
+# TABS
+# ─────────────────────────────────────────────
 t1, t2, t3, t4, t5 = st.tabs([
-    "🏥 Story 1 · The Category Rescue",
-    "⏰ Story 2 · The Timing Trap",
-    "💡 Story 3 · The Discount Myth",
-    "🌨️ Story 4 · The Seasonal Window",
-    "🏆 Story 5 · The Brand ROI Battle",
+    "1 · Category Performance",
+    "2 · Markdown Timing",
+    "3 · Discount Depth",
+    "4 · Seasonal Patterns",
+    "5 · Brand Comparison",
 ])
 
-
-# ══════════════════════════════════════════════════════
-# STORY 1 — THE CATEGORY RESCUE
-# ══════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# TAB 1 — CATEGORY PERFORMANCE
+# ══════════════════════════════════════════════
 with t1:
-
-    # Compute per-category rescue stats
-    cat_hist = df.groupby("Category")["Historical_Sales"].mean()
-    cat_stage = mdf_f.groupby(["Category", "Stage"])["Sales"].mean().reset_index()
-
-    # Find struggling category = lowest hist sales
-    struggling_cat = cat_hist.idxmin()
-    best_cat_rescue = cat_hist.idxmax()
-
-    sc_hist = cat_hist[struggling_cat]
-    sc_best_stage = (
-        mdf_f[mdf_f["Category"] == struggling_cat]
-        .groupby("Stage")["Revenue"].mean()
-        .idxmax()
-    )
-    sc_sales_at_best = (
-        mdf_f[(mdf_f["Category"] == struggling_cat) & (mdf_f["Stage"] == sc_best_stage)]
-        ["Sales"].mean()
-    )
-    sc_lift = ((sc_sales_at_best / sc_hist) - 1) * 100
-    sc_disc = (
-        mdf_f[(mdf_f["Category"] == struggling_cat) & (mdf_f["Stage"] == sc_best_stage)]
-        ["Markdown"].mean() * 100
-    )
-    sc_rev_before = sc_hist * (mdf_f[mdf_f["Category"] == struggling_cat]["Original_Price"].mean())
-    sc_rev_after = (
-        mdf_f[(mdf_f["Category"] == struggling_cat) & (mdf_f["Stage"] == sc_best_stage)]
-        ["Revenue"].mean()
-    )
+    cat_hist    = df.groupby("Category")["Historical_Sales"].mean()
+    focus_cat   = cat_hist.idxmin()
+    focus_hist  = cat_hist[focus_cat]
+    focus_best  = mdf[mdf["Category"] == focus_cat].groupby("Stage")["Revenue"].mean().idxmax()
+    focus_sales = mdf[(mdf["Category"]==focus_cat) & (mdf["Stage"]==focus_best)]["Sales"].mean()
+    focus_disc  = mdf[(mdf["Category"]==focus_cat) & (mdf["Stage"]==focus_best)]["Markdown"].mean() * 100
+    focus_lift  = ((focus_sales / focus_hist) - 1) * 100
 
     st.markdown(f"""
-    <div class='story-card'>
-      <div class='story-chapter'>Chapter 1 · Category Performance</div>
-      <div class='story-headline'>"{struggling_cat} Was Bleeding — Markdown Stopped the Haemorrhage"</div>
+    <div class='story-intro'>
+      <div class='story-label'>Question 1</div>
+      <div class='story-title'>Why are some categories selling less, and what can a markdown do?</div>
       <div class='story-body'>
-        Quarter after quarter, <strong>{struggling_cat}</strong> sat at the bottom of the sales board.
-        Buyers were placing orders, stock was arriving, but units weren't moving.
-        The team tried promotions, repositioned shelf space, even ran social media pushes —
-        nothing worked. Then the data asked a simpler question:
-        <em>Have you tried marking it down at the right moment, at the right depth?</em>
+        Looking across all categories, <strong>{focus_cat}</strong> had the lowest average
+        sales before any markdown was applied — <strong>{focus_hist:.0f} units per product</strong>.
+        Stock was available, but sales were not moving at the original price.
+        When a <strong>{focus_disc:.0f}% markdown was applied at {slabel(focus_best)}</strong>,
+        the outcome showed a clear and measurable improvement.
+      </div>
+    </div>
+
+    <div class='box-row'>
+      <div class='box-problem'>
+        <div class='box-label' style='color:#B91C1C;'>Situation Before Markdown</div>
+        <div class='box-text'>
+          <strong>{focus_cat}</strong> averaged <strong>{focus_hist:.0f} units sold per product</strong>
+          at the original price. This was the lowest across all categories,
+          suggesting that the price point was reducing customer conversion.
+        </div>
+      </div>
+      <div class='box-result'>
+        <div class='box-label' style='color:#15803D;'>Result After Markdown</div>
+        <div class='box-text'>
+          At <strong>{slabel(focus_best)} with a {focus_disc:.0f}% discount</strong>,
+          average sales rose to <strong>{focus_sales:.0f} units</strong>
+          — a <strong>+{focus_lift:.0f}% increase</strong> over the baseline figure.
+        </div>
+      </div>
+      <div class='box-recommend'>
+        <div class='box-label' style='color:#1D4ED8;'>Recommended Action</div>
+        <div class='box-text'>
+          Apply a <strong>{focus_disc:.0f}% markdown at {slabel(focus_best)}</strong>
+          for all {focus_cat} products with more than 60 days of stock on hand.
+          Projected improvement: <strong>+{focus_lift:.0f}% in units sold</strong>.
+        </div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    col_a, col_b = st.columns([1, 1])
+    col1, col2 = st.columns(2)
 
-    with col_a:
-        # Before/After/Predict boxes
-        st.markdown(f"""
-        <div class='outcome-before'>
-          <div class='outcome-label' style='color:#ef4444;'>⚠ The Problem</div>
-          <div class='outcome-text'>
-            <strong>{struggling_cat}</strong> averaged only
-            <strong>{sc_hist:.0f} units/product</strong> in historical sales —
-            the lowest of all categories. At full price, inventory sat unsold
-            and cash remained locked in stock.
-          </div>
-        </div>
-        <br>
-        <div class='outcome-after'>
-          <div class='outcome-label' style='color:#22c55e;'>✅ After Markdown ({sc_best_stage} · {sc_disc:.0f}% off)</div>
-          <div class='outcome-text'>
-            Sales surged to <strong>{sc_sales_at_best:.0f} units/product</strong>
-            — a <strong>+{sc_lift:.0f}% lift</strong> over baseline.
-            The sweet spot: Stage <strong>{sc_best_stage}</strong> with a
-            <strong>{sc_disc:.0f}% discount</strong>. Not M1 (too early, buyers wait),
-            not M4 (too desperate, margin gone).
-          </div>
-        </div>
-        <br>
-        <div class='outcome-predict'>
-          <div class='outcome-label' style='color:#3b82f6;'>🔮 Next Quarter Forecast</div>
-          <div class='outcome-text'>
-            If this playbook is applied to <strong>all {struggling_cat} SKUs</strong>
-            at {sc_best_stage} timing, projected revenue uplift is
-            <strong>+{sc_lift:.0f}%</strong> vs the no-markdown baseline.
-            Prioritise SKUs with stock age &gt; 60 days.
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+    with col1:
+        sd = mdf[mdf["Category"]==focus_cat].groupby("Stage")["Sales"].mean().reset_index()
+        sd["Stage_Label"] = sd["Stage"].map({"M1":"Stage 1","M2":"Stage 2","M3":"Stage 3","M4":"Stage 4"})
+        base = pd.DataFrame([{"Stage":"Base","Sales":focus_hist,"Stage_Label":"No Markdown"}])
+        plot_df = pd.concat([base, sd], ignore_index=True)
+        order = ["No Markdown","Stage 1","Stage 2","Stage 3","Stage 4"]
+        plot_df["Stage_Label"] = pd.Categorical(plot_df["Stage_Label"], categories=order, ordered=True)
+        plot_df = plot_df.sort_values("Stage_Label")
 
-    with col_b:
-        # Sales progression chart for struggling category
-        sc_data = cat_stage[cat_stage["Category"] == struggling_cat].copy()
-        sc_data["Stage_Label"] = sc_data["Stage"].map(
-            {"M1": "Stage 1\n(Early)", "M2": "Stage 2", "M3": "Stage 3\n(Optimal)", "M4": "Stage 4\n(Late)"}
-        )
-        # Add baseline
-        baseline_row = pd.DataFrame([{
-            "Category": struggling_cat, "Stage": "Base",
-            "Sales": sc_hist, "Stage_Label": "Baseline\n(No MD)"
-        }])
-        plot_data = pd.concat([baseline_row, sc_data], ignore_index=True)
-        stage_order = ["Baseline\n(No MD)", "Stage 1\n(Early)", "Stage 2", "Stage 3\n(Optimal)", "Stage 4\n(Late)"]
-        plot_data["Stage_Label"] = pd.Categorical(plot_data["Stage_Label"], categories=stage_order, ordered=True)
-
-        colors = ["#ef4444", "#F5A623", "#F5A623", "#22c55e", "#94a3b8"]
-
-        fig = go.Figure()
-        fig.add_trace(go.Bar(
-            x=plot_data["Stage_Label"],
-            y=plot_data["Sales"],
-            marker_color=colors,
-            text=[f"{v:.0f}" for v in plot_data["Sales"]],
+        bar_cols = [C["danger"]] + [C["primary"]] * 4
+        fig = go.Figure(go.Bar(
+            x=plot_df["Stage_Label"], y=plot_df["Sales"],
+            marker_color=bar_cols,
+            text=[f"{v:.0f}" for v in plot_df["Sales"]],
             textposition="outside",
-            textfont=dict(color="#f1f5f9", size=12),
         ))
-        fig.add_hline(
-            y=sc_hist, line_dash="dot", line_color="#ef4444",
-            annotation_text=f"Baseline: {sc_hist:.0f}", annotation_font_color="#ef4444"
-        )
-        fig.update_layout(
-            title=f"{struggling_cat}: Sales Journey Through Markdown Stages",
-            xaxis_title="Markdown Stage",
-            yaxis_title="Avg Units Sold",
-            showlegend=False,
-        )
-        st.plotly_chart(styled_chart(fig), use_container_width=True)
+        fig.add_hline(y=focus_hist, line_dash="dot", line_color=C["danger"],
+                      annotation_text=f"Baseline: {focus_hist:.0f} units",
+                      annotation_font_color=C["danger"])
+        fig.update_layout(title=f"{focus_cat}: Average Units Sold at Each Markdown Stage",
+                          yaxis_title="Avg Units Sold", showlegend=False)
+        st.plotly_chart(chart(fig), use_container_width=True)
 
-    st.markdown("---")
-    st.markdown("#### 📊 All Categories Compared: Before vs After Best Markdown")
-
-    col_c, col_d = st.columns(2)
-
-    with col_c:
-        # Grouped bar: historical vs best-stage sales
-        comp_data = []
+    with col2:
+        lift_rows = []
         for cat in sel_cats:
-            hist_avg = df[df["Category"] == cat]["Historical_Sales"].mean()
-            best_s = (
-                mdf_f[mdf_f["Category"] == cat]
-                .groupby("Stage")["Revenue"].mean()
-                .idxmax()
-            )
-            best_sales = mdf_f[
-                (mdf_f["Category"] == cat) & (mdf_f["Stage"] == best_s)
-            ]["Sales"].mean()
-            comp_data.append({"Category": cat, "Type": "Before Markdown", "Sales": hist_avg})
-            comp_data.append({"Category": cat, "Type": f"After Best Stage", "Sales": best_sales})
+            h  = df[df["Category"]==cat]["Historical_Sales"].mean()
+            bs = mdf[mdf["Category"]==cat].groupby("Stage")["Revenue"].mean().idxmax()
+            s  = mdf[(mdf["Category"]==cat) & (mdf["Stage"]==bs)]["Sales"].mean()
+            lift_rows.append({"Category": cat, "Sales Increase %": ((s/h)-1)*100})
+        lift_df = pd.DataFrame(lift_rows).sort_values("Sales Increase %", ascending=False)
 
-        comp_df = pd.DataFrame(comp_data)
-        fig2 = px.bar(
-            comp_df, x="Category", y="Sales", color="Type",
-            barmode="group",
-            title="Avg Sales: Pre-Markdown vs Post-Optimal Markdown",
-            color_discrete_map={"Before Markdown": "#ef4444", "After Best Stage": "#22c55e"},
-        )
-        st.plotly_chart(styled_chart(fig2), use_container_width=True)
-
-    with col_d:
-        # Lift % per category
-        lift_data = []
-        for cat in sel_cats:
-            hist_avg = df[df["Category"] == cat]["Historical_Sales"].mean()
-            best_s = (
-                mdf_f[mdf_f["Category"] == cat]
-                .groupby("Stage")["Revenue"].mean().idxmax()
-            )
-            best_sales = mdf_f[
-                (mdf_f["Category"] == cat) & (mdf_f["Stage"] == best_s)
-            ]["Sales"].mean()
-            lift = ((best_sales / hist_avg) - 1) * 100
-            lift_data.append({"Category": cat, "Sales Lift %": lift, "Best Stage": best_s})
-
-        lift_df = pd.DataFrame(lift_data).sort_values("Sales Lift %", ascending=False)
-
-        fig3 = px.bar(
-            lift_df, x="Category", y="Sales Lift %",
-            title="% Sales Lift Achieved by Optimised Markdown",
-            color="Sales Lift %",
-            color_continuous_scale=["#1d4ed8", "#F5A623", "#22c55e"],
-            text=lift_df["Sales Lift %"].apply(lambda x: f"+{x:.0f}%"),
-        )
-        fig3.update_traces(textposition="outside", textfont_color="#f1f5f9")
-        fig3.update_layout(coloraxis_showscale=False)
-        st.plotly_chart(styled_chart(fig3), use_container_width=True)
+        fig2 = px.bar(lift_df, x="Category", y="Sales Increase %",
+                      title="Sales Increase (%) After Applying Optimal Markdown — by Category",
+                      color_discrete_sequence=[C["primary"]],
+                      text=lift_df["Sales Increase %"].apply(lambda x: f"+{x:.0f}%"))
+        fig2.update_traces(textposition="outside")
+        st.plotly_chart(chart(fig2), use_container_width=True)
 
     st.markdown(f"""
-    <div class='insight-box'>
-      <div class='insight-tag'>🧠 Retail Expert Takeaway</div>
+    <div class='insight'>
+      <div class='insight-label'>Key Takeaway</div>
       <div class='insight-text'>
-        Categories don't fail because of poor product — they fail because of poor timing.
-        The data shows a consistent <strong>+{total_lift:.0f}% average sales uplift</strong>
-        across all categories when markdown is applied at the right stage.
-        The manager's job isn't to decide <em>if</em> to discount — it's to decide <em>when</em>.
-        Stage {best_stage} is where the money lives.
+        Every category in the range responded positively to a well-timed markdown.
+        The average sales increase across all categories is <strong>+{total_lift:.0f}%</strong>.
+        A category that appears to be underperforming is often a pricing problem,
+        not a product problem.
       </div>
     </div>
     """, unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════
-# STORY 2 — THE TIMING TRAP
-# ══════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# TAB 2 — MARKDOWN TIMING
+# ══════════════════════════════════════════════
 with t2:
-
-    stage_rev = mdf_f.groupby("Stage")["Revenue"].mean().reset_index()
-    stage_sales = mdf_f.groupby("Stage")["Sales"].mean().reset_index()
-    best_timing_stage = stage_rev.loc[stage_rev["Revenue"].idxmax(), "Stage"]
-    worst_timing_stage = stage_rev.loc[stage_rev["Revenue"].idxmin(), "Stage"]
-
-    rev_best = stage_rev.loc[stage_rev["Stage"] == best_timing_stage, "Revenue"].values[0]
-    rev_m1 = stage_rev.loc[stage_rev["Stage"] == "M1", "Revenue"].values[0]
-    timing_cost = ((rev_best - rev_m1) / rev_m1) * 100
+    stage_rev  = mdf.groupby("Stage")["Revenue"].mean()
+    best_t     = stage_rev.idxmax()
+    rev_best   = stage_rev[best_t]
+    timing_gap = ((rev_best - stage_rev["M1"]) / stage_rev["M1"]) * 100
 
     st.markdown(f"""
-    <div class='story-card'>
-      <div class='story-chapter'>Chapter 2 · Markdown Timing</div>
-      <div class='story-headline'>"You Discounted Too Early. Here's What It Cost You."</div>
+    <div class='story-intro'>
+      <div class='story-label'>Question 2</div>
+      <div class='story-title'>Does it matter when you apply the markdown — and by how much?</div>
       <div class='story-body'>
-        A nervous category manager sees slow sales in week 2 and immediately
-        slashes prices by 20%. Sounds reasonable. But the data tells a different story.
-        <strong>Products marked down at Stage 1 ({worst_timing_stage}) generate
-        {timing_cost:.0f}% less revenue</strong> than those held until the optimal moment.
-        The problem isn't the discount — it's the panic. Buyers who see early markdowns
-        learn to wait for deeper ones. You've trained your customer to hold out for more.
+        Yes — significantly. Products marked down at <strong>{slabel(best_t)}</strong> generate
+        <strong>{timing_gap:.0f}% more revenue on average</strong> compared to products
+        marked down at Stage 1.
+        The data shows a consistent revenue peak in the middle of the markdown journey.
+        Acting too early or leaving it too late both reduce the outcome.
+      </div>
+    </div>
+
+    <div class='box-row'>
+      <div class='box-problem'>
+        <div class='box-label' style='color:#B91C1C;'>Stage 1 — Lower Revenue</div>
+        <div class='box-text'>
+          Applying a markdown immediately results in reduced-price sales
+          before demand has had time to build naturally.
+          Average revenue at Stage 1: <strong>${stage_rev['M1']:,.0f}</strong> per product.
+        </div>
+      </div>
+      <div class='box-result'>
+        <div class='box-label' style='color:#15803D;'>{slabel(best_t)} — Highest Revenue</div>
+        <div class='box-text'>
+          Revenue is highest at <strong>{slabel(best_t)}</strong>,
+          averaging <strong>${rev_best:,.0f}</strong> per product.
+          Customers who were considering the product at full price convert here,
+          while margin remains above the floor.
+        </div>
+      </div>
+      <div class='box-recommend'>
+        <div class='box-label' style='color:#1D4ED8;'>Stage 4 — Margin Reduces Further</div>
+        <div class='box-text'>
+          Waiting until Stage 4 typically requires a deeper discount to shift
+          remaining stock. Average revenue at Stage 4:
+          <strong>${stage_rev['M4']:,.0f}</strong> per product.
+        </div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    col_a, col_b = st.columns([3, 2])
+    col1, col2 = st.columns([3, 2])
 
-    with col_a:
-        # Revenue curve across stages
-        stage_cat_rev = mdf_f.groupby(["Stage", "Category"])["Revenue"].mean().reset_index()
-        stage_order_map = {"M1": 1, "M2": 2, "M3": 3, "M4": 4}
-        stage_cat_rev["Stage_Num"] = stage_cat_rev["Stage"].map(stage_order_map)
-        stage_cat_rev = stage_cat_rev.sort_values("Stage_Num")
+    with col1:
+        sc = mdf.groupby(["Stage","Category"])["Revenue"].mean().reset_index()
+        sc["Stage_Label"] = sc["Stage"].map({"M1":"Stage 1","M2":"Stage 2","M3":"Stage 3","M4":"Stage 4"})
+        fig = px.line(sc, x="Stage_Label", y="Revenue", color="Category",
+                      markers=True,
+                      title="Average Revenue at Each Markdown Stage — by Category",
+                      color_discrete_sequence=CHART_COLORS)
+        fig.add_vrect(x0="Stage 2", x1="Stage 3",
+                      fillcolor=C["primary"], opacity=0.06, layer="below", line_width=0,
+                      annotation_text="Recommended window",
+                      annotation_position="top left",
+                      annotation_font_color=C["primary"])
+        fig.update_traces(line_width=2, marker_size=8)
+        fig.update_layout(xaxis_title="Markdown Stage", yaxis_title="Avg Revenue per Product")
+        st.plotly_chart(chart(fig, height=380), use_container_width=True)
 
-        fig = px.line(
-            stage_cat_rev, x="Stage", y="Revenue", color="Category",
-            markers=True,
-            title="Revenue Curve: How Timing Changes Everything",
-            color_discrete_sequence=PALETTE,
-            symbol="Category",
-        )
-        # Add shading for optimal zone
-        fig.add_vrect(
-            x0="M2", x1="M3",
-            fillcolor="#22c55e", opacity=0.08,
-            layer="below", line_width=0,
-            annotation_text="🎯 Optimal Window", annotation_position="top left",
-            annotation_font_color="#22c55e",
-        )
-        fig.add_vrect(
-            x0="M1", x1="M1",
-            fillcolor="#ef4444", opacity=0.0,
-        )
-        fig.update_traces(line_width=2.5, marker_size=10)
-        st.plotly_chart(styled_chart(fig, height=400), use_container_width=True)
-
-    with col_b:
-        # Cost of early & late markdown
-        st.markdown("#### ⚠️ The Price of Mistiming")
-
-        for stage_i in ["M1", "M2", "M3", "M4"]:
-            rev_i = stage_rev.loc[stage_rev["Stage"] == stage_i, "Revenue"].values[0]
-            delta = ((rev_i - rev_best) / rev_best) * 100
-            color = "#22c55e" if stage_i == best_timing_stage else "#ef4444" if delta < -10 else "#F5A623"
-            tag = "🏆 OPTIMAL" if stage_i == best_timing_stage else ("⚠️ TOO EARLY" if stage_i == "M1" else ("❌ OVER-DISCOUNTED" if stage_i == "M4" else ""))
-
+    with col2:
+        st.markdown("#### Revenue by Stage")
+        for sk in ["M1","M2","M3","M4"]:
+            rv    = stage_rev[sk]
+            delta = ((rv - rev_best) / rev_best) * 100
+            is_b  = sk == best_t
+            row_bg = f"background:{C['primary']}10; border:1px solid {C['primary']}30;" if is_b \
+                     else f"background:{C['bg_subtle']}; border:1px solid {C['border']};"
+            tag    = "  ✓ Best" if is_b else ""
+            vc     = C["primary"] if is_b else (C["danger"] if delta < -8 else C["warn"])
             st.markdown(f"""
-            <div style='background:#0f172a; border:1px solid #1e293b; border-radius:8px;
-                        padding:12px 16px; margin-bottom:8px; display:flex;
-                        justify-content:space-between; align-items:center;'>
-              <div>
-                <span style='color:#f1f5f9; font-weight:600;'>{stage_i}</span>
-                <span style='color:#64748b; font-size:0.78rem; margin-left:8px;'>{tag}</span>
-              </div>
+            <div style='{row_bg} border-radius:6px; padding:10px 14px; margin-bottom:6px;
+                        display:flex; justify-content:space-between; align-items:center;'>
+              <span style='font-weight:600; color:{C["text_main"]};'>{slabel(sk)}{tag}</span>
               <div style='text-align:right;'>
-                <span style='color:{color}; font-family:Playfair Display,serif; font-size:1.1rem;'>
-                  ${rev_i:,.0f}
-                </span>
-                <span style='color:{color}; font-size:0.78rem; display:block;'>
-                  {delta:+.1f}% vs optimal
-                </span>
+                <span style='color:{vc}; font-weight:700;'>${rv:,.0f}</span><br>
+                <span style='color:{C["text_mute"]}; font-size:0.75rem;'>{delta:+.1f}% vs best</span>
               </div>
             </div>
             """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown("#### ⏰ Category-Level Timing Intelligence")
-
-    # Heatmap: Category × Stage revenue
-    pivot = mdf_f.groupby(["Category", "Stage"])["Revenue"].mean().reset_index()
-    pivot_wide = pivot.pivot(index="Category", columns="Stage", values="Revenue")
-
-    fig_heat = go.Figure(data=go.Heatmap(
-        z=pivot_wide.values,
-        x=pivot_wide.columns.tolist(),
-        y=pivot_wide.index.tolist(),
-        colorscale=[[0, "#1a0a0a"], [0.5, "#F5A623"], [1, "#22c55e"]],
-        text=[[f"${v:,.0f}" for v in row] for row in pivot_wide.values],
-        texttemplate="%{text}",
-        showscale=True,
-        colorbar=dict(tickfont=dict(color="#94a3b8")),
+    pivot = mdf.groupby(["Category","Stage"])["Revenue"].mean().reset_index()
+    pw = pivot.pivot(index="Category", columns="Stage", values="Revenue")
+    pw.columns = [slabel(c) for c in pw.columns]
+    fig_h = go.Figure(data=go.Heatmap(
+        z=pw.values, x=pw.columns.tolist(), y=pw.index.tolist(),
+        colorscale=[[0,"#F1F5F9"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+        text=[[f"${v:,.0f}" for v in row] for row in pw.values],
+        texttemplate="%{text}", showscale=True,
     ))
-    fig_heat.update_layout(
-        title="Avg Revenue by Category × Markdown Stage (Darker = Lower, Brighter = Higher)",
-    )
-    st.plotly_chart(styled_chart(fig_heat, height=280), use_container_width=True)
+    fig_h.update_layout(title="Average Revenue by Category and Markdown Stage — Darker = Higher Revenue")
+    st.plotly_chart(chart(fig_h, height=250), use_container_width=True)
 
     st.markdown(f"""
-    <div class='insight-box'>
-      <div class='insight-tag'>🧠 The 25-Year Rule</div>
+    <div class='insight'>
+      <div class='insight-label'>Key Takeaway</div>
       <div class='insight-text'>
-        In 25 years of retail, the single most expensive mistake I've seen isn't over-discounting
-        — it's <em>mis-timing</em>. Stage M1 markdowns train customers to wait.
-        Stage M4 markdowns scream desperation. <strong>Stage {best_timing_stage}
-        is the confidence move</strong> — you discount before the customer expects it,
-        convert fence-sitters, and protect margin on the rest of the range.
-        This data shows that difference is worth <strong>{timing_cost:.0f}% more revenue</strong>.
+        Changing the timing of a markdown — without changing the discount amount —
+        can be worth up to <strong>{timing_gap:.0f}% more revenue</strong>.
+        The recommended approach is to plan your markdown calendar in advance
+        and use <strong>{slabel(best_t)}</strong> as the standard trigger point.
       </div>
     </div>
     """, unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════
-# STORY 3 — THE DISCOUNT MYTH
-# ══════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# TAB 3 — DISCOUNT DEPTH
+# ══════════════════════════════════════════════
 with t3:
+    bins   = [0, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 1.0]
+    labels = ["<15%","15–20%","20–25%","25–30%","30–35%","35–40%",">40%"]
+    mdf["Disc_Bin"] = pd.cut(mdf["Markdown"], bins=bins, labels=labels)
 
-    bins = [0, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 1.0]
-    labels = ["<15%", "15–20%", "20–25%", "25–30%", "30–35%", "35–40%", ">40%"]
-    mdf_f["Disc_Bin"] = pd.cut(mdf_f["Markdown"], bins=bins, labels=labels)
+    disc_total = mdf.groupby("Disc_Bin", observed=True)["Revenue"].mean().reset_index()
+    peak_bin   = disc_total.loc[disc_total["Revenue"].idxmax(), "Disc_Bin"]
+    peak_rev   = disc_total["Revenue"].max()
+    low_rev    = disc_total["Revenue"].min()
+    depth_gap  = ((peak_rev - low_rev) / low_rev) * 100
 
-    disc_rev = mdf_f.groupby(["Disc_Bin", "Category"]).agg(
-        Revenue=("Revenue", "mean"),
-        Sales=("Sales", "mean"),
-        Count=("Product_ID", "count"),
-    ).reset_index()
-    disc_rev_total = mdf_f.groupby("Disc_Bin")["Revenue"].mean().reset_index()
-    peak_bin = disc_rev_total.loc[disc_rev_total["Revenue"].idxmax(), "Disc_Bin"]
-    peak_rev = disc_rev_total.loc[disc_rev_total["Revenue"].idxmax(), "Revenue"]
-    low_rev = disc_rev_total.loc[disc_rev_total["Revenue"].idxmin(), "Revenue"]
-    myth_pct = ((peak_rev - low_rev) / low_rev) * 100
+    ret_disc   = mdf.dropna(subset=["Disc_Bin"]).groupby("Disc_Bin", observed=True)["Return_Rate"].mean().reset_index()
+    rate_low   = ret_disc.iloc[0]["Return_Rate"]
+    rate_high  = ret_disc.iloc[-1]["Return_Rate"]
 
     st.markdown(f"""
-    <div class='story-card'>
-      <div class='story-chapter'>Chapter 3 · Discount Depth</div>
-      <div class='story-headline'>"We Gave 40% Off and Made Less Money. Here's Why."</div>
+    <div class='story-intro'>
+      <div class='story-label'>Question 3</div>
+      <div class='story-title'>Is a larger discount always better for revenue?</div>
       <div class='story-body'>
-        The buyer pushed for a 40% flash sale. "More discount = more sales = more revenue."
-        It sounds like math. It isn't. When the results came in, the 40%-off products
-        generated <strong>{myth_pct:.0f}% less revenue per product</strong> than those
-        discounted at <strong>{peak_bin}</strong>. Deep discounts attract bargain hunters
-        who return more, review less favourably, and rarely become loyal customers.
-        The data doesn't lie — the sweet spot has a ceiling.
+        The data shows that the highest average revenue per product is achieved at a
+        <strong>{peak_bin} discount</strong> — not at 40% or above.
+        Beyond this point, the additional units sold are not enough to compensate for
+        the lower price per unit. Product return rates also increase at higher discount levels,
+        which further reduces net revenue.
+      </div>
+    </div>
+
+    <div class='box-row'>
+      <div class='box-problem'>
+        <div class='box-label' style='color:#B91C1C;'>What Happens Above {peak_bin}</div>
+        <div class='box-text'>
+          At discounts above <strong>{peak_bin}</strong>, average revenue per product
+          starts to decline. Return rates rise from <strong>{rate_low:.1f}%</strong>
+          at lower discounts to <strong>{rate_high:.1f}%</strong> at the highest levels,
+          reducing the net benefit of the additional sales volume.
+        </div>
+      </div>
+      <div class='box-result'>
+        <div class='box-label' style='color:#15803D;'>The Recommended Range</div>
+        <div class='box-text'>
+          A discount of <strong>{peak_bin}</strong> produces the highest average revenue.
+          This range brings in price-sensitive customers without reducing the
+          perceived value of the product.
+        </div>
+      </div>
+      <div class='box-recommend'>
+        <div class='box-label' style='color:#1D4ED8;'>Recommended Action</div>
+        <div class='box-text'>
+          Use <strong>{peak_bin}</strong> as the default markdown range for most products.
+          Only go beyond this for products that have been unsold for more than 90 days
+          and require clearance.
+        </div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    col_a, col_b = st.columns([3, 2])
+    col1, col2 = st.columns(2)
 
-    with col_a:
-        fig = px.bar(
-            disc_rev_total,
-            x="Disc_Bin", y="Revenue",
-            title="Avg Revenue per Product by Discount Depth — The Diminishing Return Curve",
-            color="Revenue",
-            color_continuous_scale=["#22c55e", "#F5A623", "#ef4444"],
-        )
-        # Highlight peak
-        peak_idx = disc_rev_total["Revenue"].idxmax()
-        fig.add_annotation(
-            x=disc_rev_total.loc[peak_idx, "Disc_Bin"],
-            y=disc_rev_total.loc[peak_idx, "Revenue"],
-            text=f"🎯 Sweet Spot<br>{peak_bin}",
-            showarrow=True, arrowhead=2, arrowcolor="#22c55e",
-            font=dict(color="#22c55e", size=12),
-            ay=-50,
-        )
-        fig.update_layout(coloraxis_showscale=False, xaxis_title="Discount Depth", yaxis_title="Avg Revenue / Product")
-        st.plotly_chart(styled_chart(fig, height=400), use_container_width=True)
-
-    with col_b:
-        st.markdown("#### 📉 What Over-Discounting Really Costs")
-
-        # Return rate vs discount correlation
-        mdf_f_notnull = mdf_f.dropna(subset=["Disc_Bin"])
-        return_disc = mdf_f_notnull.groupby("Disc_Bin")["Return_Rate"].mean().reset_index()
-        fig_ret = px.line(
-            return_disc, x="Disc_Bin", y="Return_Rate",
-            markers=True,
-            title="Return Rate Rises with Discount Depth",
-            color_discrete_sequence=["#ef4444"],
-        )
-        fig_ret.update_traces(line_width=2.5, marker_size=9)
-        fig_ret.update_layout(yaxis_title="Avg Return Rate (%)", xaxis_title="Discount Depth")
-        st.plotly_chart(styled_chart(fig_ret, height=280), use_container_width=True)
-
-    st.markdown("---")
-    col_c, col_d = st.columns(2)
-
-    with col_c:
-        # Per-category sweet spot
-        cat_sweet = (
-            mdf_f.groupby(["Category", "Disc_Bin"])["Revenue"]
-            .mean().reset_index()
-        )
-        fig_cs = px.line(
-            cat_sweet.dropna(), x="Disc_Bin", y="Revenue", color="Category",
-            markers=True,
-            title="Each Category Has Its Own Sweet Spot",
-            color_discrete_sequence=PALETTE,
-        )
-        fig_cs.update_traces(line_width=2, marker_size=8)
-        st.plotly_chart(styled_chart(fig_cs), use_container_width=True)
-
-    with col_d:
-        # Rating vs discount
-        rating_disc = mdf_f.dropna(subset=["Disc_Bin"]).groupby("Disc_Bin")["Customer_Ratings"].mean().reset_index()
-        fig_rat = px.bar(
-            rating_disc, x="Disc_Bin", y="Customer_Ratings",
-            title="Customer Ratings Drop at Extreme Discounts",
-            color="Customer_Ratings",
-            color_continuous_scale=["#ef4444", "#F5A623", "#22c55e"],
-        )
-        fig_rat.update_layout(coloraxis_showscale=False, yaxis_title="Avg Rating", yaxis_range=[0, 5])
-        st.plotly_chart(styled_chart(fig_rat), use_container_width=True)
-
-    st.markdown(f"""
-    <div class='insight-box'>
-      <div class='insight-tag'>🧠 The Margin Destruction Warning</div>
-      <div class='insight-text'>
-        A 40% discount doesn't just reduce price — it changes <em>who buys</em> your product.
-        Return rates climb as discount depth increases. Customer ratings drop.
-        You're not gaining loyal customers; you're renting transaction volume at full margin cost.
-        The data shows <strong>{peak_bin} is the intelligent ceiling</strong> —
-        above that, you are subsidising your competitors' customers.
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-
-# ══════════════════════════════════════════════════════
-# STORY 4 — THE SEASONAL WINDOW
-# ══════════════════════════════════════════════════════
-with t4:
-
-    season_stage = mdf_f.groupby(["Season", "Stage"]).agg(
-        Revenue=("Revenue", "mean"),
-        Sales=("Sales", "mean"),
-        Sell_through=("Sell_through", "mean"),
-    ).reset_index()
-
-    # Which season has highest sell-through urgency (M4 - M1 delta)
-    st_pivot = season_stage.pivot(index="Season", columns="Stage", values="Sell_through")
-    st_pivot["Velocity"] = st_pivot["M4"] - st_pivot["M1"]
-    urgent_season = st_pivot["Velocity"].idxmax()
-    slow_season = st_pivot["Velocity"].idxmin()
-
-    urgent_vel = st_pivot.loc[urgent_season, "Velocity"]
-
-    st.markdown(f"""
-    <div class='story-card'>
-      <div class='story-chapter'>Chapter 4 · Seasonal Strategy</div>
-      <div class='story-headline'>"{urgent_season} Moves Fast — If You Blink, You Miss the Window"</div>
-      <div class='story-body'>
-        Not all seasons are equal. <strong>{urgent_season}</strong> products show
-        a sell-through velocity <strong>{urgent_vel:.1f}x faster</strong> than
-        <strong>{slow_season}</strong> when markdowns are applied.
-        This means your {urgent_season} markdown window is narrow.
-        Miss it and you're left with full warehouses when the season turns.
-        Hit it and you can clear 80%+ of inventory before the competition even notices.
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col_a, col_b = st.columns(2)
-
-    with col_a:
-        fig = px.line(
-            season_stage, x="Stage", y="Revenue", color="Season",
-            markers=True,
-            title="Revenue Trajectory by Season — Timing Differs",
-            color_discrete_sequence=PALETTE,
-        )
-        fig.update_traces(line_width=2.5, marker_size=10)
-        st.plotly_chart(styled_chart(fig, height=380), use_container_width=True)
-
-    with col_b:
-        # Sell-through heatmap by season and stage
-        st_heat = season_stage.pivot(index="Season", columns="Stage", values="Sell_through")
-        fig_h = go.Figure(data=go.Heatmap(
-            z=st_heat.values,
-            x=st_heat.columns.tolist(),
-            y=st_heat.index.tolist(),
-            colorscale=[[0, "#0f172a"], [0.5, "#F5A623"], [1, "#22c55e"]],
-            text=[[f"{v:.2f}x" for v in row] for row in st_heat.values],
-            texttemplate="%{text}",
-            showscale=True,
-            colorbar=dict(title="Sell-Through", tickfont=dict(color="#94a3b8")),
+    with col1:
+        peak_idx  = disc_total["Revenue"].idxmax()
+        bar_cols3 = [C["primary"] if i == peak_idx else "#CBD5E1" for i in range(len(disc_total))]
+        fig = go.Figure(go.Bar(
+            x=disc_total["Disc_Bin"].astype(str), y=disc_total["Revenue"],
+            marker_color=bar_cols3,
+            text=[f"${v:,.0f}" for v in disc_total["Revenue"]],
+            textposition="outside",
         ))
-        fig_h.update_layout(title="Sell-Through Ratio: Season × Stage (Higher = More Urgent)")
-        st.plotly_chart(styled_chart(fig_h, height=380), use_container_width=True)
+        fig.add_annotation(
+            x=str(peak_bin), y=peak_rev,
+            text="Best range",
+            showarrow=True, arrowhead=2, arrowcolor=C["primary"],
+            font=dict(color=C["primary"], size=11), ay=-45,
+        )
+        fig.update_layout(title="Average Revenue per Product by Discount Depth",
+                          xaxis_title="Discount Range", yaxis_title="Avg Revenue", showlegend=False)
+        st.plotly_chart(chart(fig), use_container_width=True)
+
+    with col2:
+        fig2 = px.line(ret_disc, x="Disc_Bin", y="Return_Rate", markers=True,
+                       title="Return Rate by Discount Depth",
+                       color_discrete_sequence=[C["warn"]])
+        fig2.update_traces(line_width=2, marker_size=8)
+        fig2.update_layout(yaxis_title="Return Rate (%)", xaxis_title="Discount Range")
+        st.plotly_chart(chart(fig2), use_container_width=True)
+
+    cat_disc = mdf.dropna(subset=["Disc_Bin"]).groupby(["Category","Disc_Bin"], observed=True)["Revenue"].mean().reset_index()
+    fig3 = px.line(cat_disc, x="Disc_Bin", y="Revenue", color="Category", markers=True,
+                   title="Average Revenue by Discount Depth — by Category",
+                   color_discrete_sequence=CHART_COLORS)
+    fig3.update_traces(line_width=2, marker_size=7)
+    fig3.update_layout(xaxis_title="Discount Range", yaxis_title="Avg Revenue")
+    st.plotly_chart(chart(fig3, height=320), use_container_width=True)
+
+    st.markdown(f"""
+    <div class='insight'>
+      <div class='insight-label'>Key Takeaway</div>
+      <div class='insight-text'>
+        A larger discount does not automatically generate more revenue.
+        The data shows a <strong>{depth_gap:.0f}% revenue difference</strong>
+        between the best and lowest performing discount ranges.
+        Setting a clear upper limit on discount depth — and reviewing exceptions individually —
+        is a straightforward way to protect margin.
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════
+# TAB 4 — SEASONAL PATTERNS
+# ══════════════════════════════════════════════
+with t4:
+    season_stage = mdf.groupby(["Season","Stage"]).agg(
+        Revenue=("Revenue","mean"),
+        Sell_through=("Sell_through","mean"),
+    ).reset_index()
+
+    st_pivot     = season_stage.pivot(index="Season", columns="Stage", values="Sell_through")
+    st_pivot["Range"] = st_pivot["M4"] - st_pivot["M1"]
+    fast_season  = st_pivot["Range"].idxmax()
+    fast_vel     = st_pivot.loc[fast_season, "Range"]
+
+    season_best = (
+        mdf.groupby(["Season","Stage"])["Revenue"].mean().reset_index()
+        .sort_values("Revenue", ascending=False)
+        .drop_duplicates(subset=["Season"])
+    )
+
+    st.markdown(f"""
+    <div class='story-intro'>
+      <div class='story-label'>Question 4</div>
+      <div class='story-title'>Should the markdown approach change depending on the season?</div>
+      <div class='story-body'>
+        Yes — different seasons show different sell-through patterns.
+        <strong>{fast_season}</strong> products show the highest sell-through improvement
+        once a markdown is applied, with the rate improving by
+        <strong>{fast_vel:.1f}x</strong> between Stage 1 and Stage 4.
+        This means the markdown window in <strong>{fast_season}</strong> delivers strong results,
+        but requires a more timely decision to capture the full benefit.
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        season_stage["Stage_Label"] = season_stage["Stage"].map(
+            {"M1":"Stage 1","M2":"Stage 2","M3":"Stage 3","M4":"Stage 4"}
+        )
+        fig = px.line(season_stage, x="Stage_Label", y="Revenue", color="Season",
+                      markers=True, title="Average Revenue by Season and Markdown Stage",
+                      color_discrete_sequence=CHART_COLORS)
+        fig.update_traces(line_width=2, marker_size=8)
+        fig.update_layout(xaxis_title="Stage", yaxis_title="Avg Revenue")
+        st.plotly_chart(chart(fig, height=360), use_container_width=True)
+
+    with col2:
+        st_wide = season_stage.pivot(index="Season", columns="Stage_Label", values="Sell_through")
+        fig_h   = go.Figure(data=go.Heatmap(
+            z=st_wide.values, x=st_wide.columns.tolist(), y=st_wide.index.tolist(),
+            colorscale=[[0,"#F8FAFC"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+            text=[[f"{v:.2f}x" for v in row] for row in st_wide.values],
+            texttemplate="%{text}", showscale=True,
+        ))
+        fig_h.update_layout(
+            title="Sell-Through Rate by Season and Stage — Darker = Faster Stock Movement",
+            height=360,
+        )
+        st.plotly_chart(chart(fig_h), use_container_width=True)
 
     st.markdown("---")
-    st.markdown("#### 📅 Seasonal Action Calendar — When to Deploy Each Markdown Stage")
+    col3, col4 = st.columns([1, 2])
 
-    col_c, col_d = st.columns([2, 3])
-
-    with col_c:
-        # Best stage per season
-        season_best = (
-            mdf_f.groupby(["Season", "Stage"])["Revenue"]
-            .mean().reset_index()
-            .sort_values("Revenue", ascending=False)
-            .drop_duplicates(subset=["Season"])
-        )
+    with col3:
+        st.markdown("#### Recommended Stage by Season")
         for _, row_s in season_best.iterrows():
-            season_rev = mdf_f[mdf_f["Season"] == row_s["Season"]].groupby("Stage")["Revenue"].mean()
-            peak_rev_s = season_rev.max()
-            low_rev_s = season_rev.min()
-            urgency = ((peak_rev_s - low_rev_s) / low_rev_s * 100)
-            urgency_color = "#ef4444" if urgency > 60 else "#F5A623" if urgency > 30 else "#22c55e"
-
+            sv = mdf[mdf["Season"]==row_s["Season"]].groupby("Stage")["Revenue"].mean()
+            sensitivity = ((sv.max() - sv.min()) / sv.min() * 100)
+            note = "Plan markdown early" if sensitivity > 60 else ("Some flexibility" if sensitivity > 30 else "Flexible timing")
+            nc   = C["danger"] if sensitivity > 60 else (C["warn"] if sensitivity > 30 else C["primary"])
             st.markdown(f"""
-            <div style='background:#0f172a; border:1px solid #1e293b; border-radius:8px;
-                        padding:14px 16px; margin-bottom:8px;'>
-              <div style='display:flex; justify-content:space-between; align-items:center;'>
+            <div style='background:{C["bg_card"]}; border:1px solid {C["border"]};
+                        border-radius:6px; padding:12px 14px; margin-bottom:8px;'>
+              <div style='display:flex; justify-content:space-between;'>
                 <div>
-                  <span style='color:#f1f5f9; font-weight:600; font-size:1rem;'>{row_s['Season']}</span><br>
-                  <span style='color:#64748b; font-size:0.8rem;'>Best stage: <strong style="color:#F5A623">{row_s['Stage']}</strong></span>
+                  <span style='font-weight:600; color:{C["text_main"]};'>{row_s['Season']}</span><br>
+                  <span style='color:{C["text_sub"]}; font-size:0.8rem;'>
+                    Best stage: <span class='stage-pill'>{slabel(row_s['Stage'])}</span>
+                  </span>
                 </div>
                 <div style='text-align:right;'>
-                  <span style='color:{urgency_color}; font-size:0.78rem; font-weight:600;'>
-                    {'🔥 HIGH URGENCY' if urgency > 60 else '⚡ MEDIUM' if urgency > 30 else '✅ FLEXIBLE'}
-                  </span><br>
-                  <span style='color:#64748b; font-size:0.75rem;'>Timing sensitivity: {urgency:.0f}%</span>
+                  <span style='color:{nc}; font-size:0.75rem; font-weight:600;'>{note}</span><br>
+                  <span style='color:{C["text_mute"]}; font-size:0.72rem;'>
+                    Timing sensitivity: {sensitivity:.0f}%
+                  </span>
                 </div>
               </div>
             </div>
             """, unsafe_allow_html=True)
 
-    with col_d:
-        # Seasonal revenue vs category grouped
-        season_cat = mdf_f.groupby(["Season", "Category"])["Revenue"].mean().reset_index()
-        fig_sc = px.bar(
-            season_cat, x="Season", y="Revenue", color="Category",
-            barmode="group",
-            title="Avg Revenue by Season & Category — Where to Focus Markdown Budget",
-            color_discrete_sequence=PALETTE,
-        )
-        st.plotly_chart(styled_chart(fig_sc, height=340), use_container_width=True)
+    with col4:
+        sc = mdf.groupby(["Season","Category"])["Revenue"].mean().reset_index()
+        fig_sc = px.bar(sc, x="Season", y="Revenue", color="Category",
+                        barmode="group",
+                        title="Average Revenue by Season and Category",
+                        color_discrete_sequence=CHART_COLORS)
+        fig_sc.update_layout(yaxis_title="Avg Revenue")
+        st.plotly_chart(chart(fig_sc, height=300), use_container_width=True)
 
     st.markdown(f"""
-    <div class='insight-box'>
-      <div class='insight-tag'>🧠 The Seasonal Urgency Rule</div>
+    <div class='insight'>
+      <div class='insight-label'>Key Takeaway</div>
       <div class='insight-text'>
-        <strong>{urgent_season}</strong> products don't wait.
-        The window between "moving well" and "stranded stock" can be
-        as short as 3 weeks. This data shows sell-through almost doubles
-        between M1 and M4 in {urgent_season} — meaning late markdowns work
-        but only because you've already lost weeks of full-margin sales.
-        Build your {urgent_season} markdown calendar now, not when you
-        see stock reports turning red.
+        A single markdown calendar does not work equally well across all seasons.
+        <strong>{fast_season}</strong> products respond most strongly to markdowns
+        and have a shorter window to act in.
+        Building a season-specific markdown plan — with stage targets agreed
+        before the season begins — will improve both sell-through rates and revenue.
       </div>
     </div>
     """, unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════
-# STORY 5 — THE BRAND ROI BATTLE
-# ══════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# TAB 5 — BRAND COMPARISON
+# ══════════════════════════════════════════════
 with t5:
-
     brand_hist = df.groupby("Brand")["Historical_Sales"].mean()
-    brand_stage = mdf_f.groupby(["Brand", "Stage"])["Revenue"].mean().reset_index()
     brand_best = (
-        mdf_f.groupby(["Brand", "Stage"])["Revenue"].mean()
-        .reset_index()
+        mdf.groupby(["Brand","Stage"])["Revenue"].mean().reset_index()
         .sort_values("Revenue", ascending=False)
         .drop_duplicates(subset=["Brand"])
-        .rename(columns={"Revenue": "Best_Revenue", "Stage": "Best_Stage"})
+        .rename(columns={"Revenue":"Best_Revenue","Stage":"Best_Stage"})
     )
-    brand_perf = pd.merge(
-        brand_best,
-        pd.DataFrame({"Brand": brand_hist.index, "Hist_Sales": brand_hist.values}),
-        on="Brand"
+    brand_best["Hist_Sales"] = brand_best["Brand"].map(brand_hist)
+    brand_best["Opt_Sales"]  = brand_best.apply(
+        lambda r: mdf[(mdf["Brand"]==r["Brand"]) & (mdf["Stage"]==r["Best_Stage"])]["Sales"].mean(), axis=1
     )
-    brand_perf["MD_Sales"] = brand_perf.apply(
-        lambda r: mdf_f[
-            (mdf_f["Brand"] == r["Brand"]) & (mdf_f["Stage"] == r["Best_Stage"])
-        ]["Sales"].mean(), axis=1
-    )
-    brand_perf["Sales_Lift_Pct"] = ((brand_perf["MD_Sales"] / brand_perf["Hist_Sales"]) - 1) * 100
-    brand_perf = brand_perf.sort_values("Best_Revenue", ascending=False)
+    brand_best["Lift_Pct"] = ((brand_best["Opt_Sales"] / brand_best["Hist_Sales"]) - 1) * 100
+    brand_best = brand_best.sort_values("Best_Revenue", ascending=False)
 
-    winner_brand = brand_perf.iloc[0]["Brand"]
-    winner_lift = brand_perf.iloc[0]["Sales_Lift_Pct"]
-    winner_stage = brand_perf.iloc[0]["Best_Stage"]
-    laggard_brand = brand_perf.iloc[-1]["Brand"]
-    laggard_lift = brand_perf.iloc[-1]["Sales_Lift_Pct"]
+    top_brand    = brand_best.iloc[0]["Brand"]
+    top_lift     = brand_best.iloc[0]["Lift_Pct"]
+    top_stage    = brand_best.iloc[0]["Best_Stage"]
+    low_brand    = brand_best.iloc[-1]["Brand"]
+    low_lift     = brand_best.iloc[-1]["Lift_Pct"]
 
     st.markdown(f"""
-    <div class='story-card'>
-      <div class='story-chapter'>Chapter 5 · Brand Markdown ROI</div>
-      <div class='story-headline'>"{winner_brand} Rewards Every Discount Dollar. {laggard_brand} Wastes Half of Them."</div>
+    <div class='story-intro'>
+      <div class='story-label'>Question 5</div>
+      <div class='story-title'>Do all brands respond equally to markdowns — and where should budget go?</div>
       <div class='story-body'>
-        You have a fixed markdown budget. Every percentage point off comes out of margin.
-        So which brands actually respond? The data reveals a stark divide:
-        <strong>{winner_brand}</strong> generates a <strong>+{winner_lift:.0f}% sales lift</strong>
-        when discounted at {winner_stage} — customers are primed and waiting.
-        Meanwhile, <strong>{laggard_brand}</strong> shows only
-        <strong>+{laggard_lift:.0f}%</strong> lift — the same discount,
-        a fraction of the return. Brand equity determines markdown effectiveness.
-        Are you allocating budget accordingly?
+        The data shows a clear difference between brands.
+        <strong>{top_brand}</strong> shows a <strong>+{top_lift:.0f}% sales increase</strong>
+        when a markdown is applied at {slabel(top_stage)}.
+        <strong>{low_brand}</strong> shows a smaller increase of
+        <strong>+{low_lift:.0f}%</strong> for a comparable action.
+        This means the same markdown budget produces different results
+        depending on which brand it is applied to.
+      </div>
+    </div>
+
+    <div class='box-row'>
+      <div class='box-problem'>
+        <div class='box-label' style='color:#B91C1C;'>Brands with Lower Response</div>
+        <div class='box-text'>
+          <strong>{low_brand}</strong> shows a <strong>+{low_lift:.0f}%</strong> sales
+          response to markdown. Before increasing the discount level,
+          it is worth investigating whether price is actually the main factor
+          limiting sales for this brand.
+        </div>
+      </div>
+      <div class='box-result'>
+        <div class='box-label' style='color:#15803D;'>Brands with Higher Response</div>
+        <div class='box-text'>
+          <strong>{top_brand}</strong> shows a <strong>+{top_lift:.0f}%</strong> sales
+          increase — the highest in the range — making it the most effective use
+          of markdown budget at <strong>{slabel(top_stage)}</strong>.
+        </div>
+      </div>
+      <div class='box-recommend'>
+        <div class='box-label' style='color:#1D4ED8;'>Recommended Approach</div>
+        <div class='box-text'>
+          Prioritise markdown investment for brands where the response is highest.
+          For brands with a lower response, consider whether non-price actions
+          such as placement, range or availability would be more effective.
+        </div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    col_a, col_b = st.columns(2)
+    col1, col2 = st.columns(2)
 
-    with col_a:
-        # Brand revenue comparison
-        fig = px.bar(
-            brand_perf, x="Brand", y="Best_Revenue",
-            title="Peak Revenue Potential by Brand (at Optimal Stage)",
-            color="Best_Revenue",
-            color_continuous_scale=["#1d4ed8", "#F5A623", "#22c55e"],
-            text=brand_perf["Best_Revenue"].apply(lambda x: f"${x:,.0f}"),
-        )
-        fig.update_traces(textposition="outside", textfont_color="#f1f5f9")
-        fig.update_layout(coloraxis_showscale=False, yaxis_title="Avg Revenue / Product")
-        st.plotly_chart(styled_chart(fig, height=380), use_container_width=True)
+    with col1:
+        fig = px.bar(brand_best, x="Brand", y="Best_Revenue",
+                     title="Peak Revenue per Product — by Brand at Optimal Stage",
+                     color_discrete_sequence=[C["primary"]],
+                     text=brand_best["Best_Revenue"].apply(lambda x: f"${x:,.0f}"))
+        fig.update_traces(textposition="outside")
+        fig.update_layout(yaxis_title="Avg Revenue per Product", showlegend=False)
+        st.plotly_chart(chart(fig), use_container_width=True)
 
-    with col_b:
-        # Brand sales lift % chart
-        lift_colors = ["#22c55e" if x == brand_perf["Sales_Lift_Pct"].max()
-                       else "#ef4444" if x == brand_perf["Sales_Lift_Pct"].min()
-                       else "#F5A623"
-                       for x in brand_perf["Sales_Lift_Pct"]]
-
-        fig_lift = go.Figure(go.Bar(
-            x=brand_perf["Brand"],
-            y=brand_perf["Sales_Lift_Pct"],
-            marker_color=lift_colors,
-            text=[f"+{v:.0f}%" for v in brand_perf["Sales_Lift_Pct"]],
+    with col2:
+        bar_cols5 = [
+            C["primary"] if v == brand_best["Lift_Pct"].max()
+            else C["danger"] if v == brand_best["Lift_Pct"].min()
+            else "#94A3B8"
+            for v in brand_best["Lift_Pct"]
+        ]
+        fig2 = go.Figure(go.Bar(
+            x=brand_best["Brand"], y=brand_best["Lift_Pct"],
+            marker_color=bar_cols5,
+            text=[f"+{v:.0f}%" for v in brand_best["Lift_Pct"]],
             textposition="outside",
-            textfont=dict(color="#f1f5f9"),
         ))
-        fig_lift.update_layout(
-            title="Sales Lift % per Brand — Where Markdown Budget Works Hardest",
-            yaxis_title="Sales Lift vs Baseline (%)",
-            paper_bgcolor="#0f0f1a", plot_bgcolor="#0f0f1a",
-            font=dict(color="#94a3b8"),
-            height=380,
-            margin=dict(l=20, r=20, t=45, b=20),
+        fig2.update_layout(
+            title="Sales Increase (%) by Brand After Applying Optimal Markdown",
+            yaxis_title="Sales Increase %",
+            paper_bgcolor="white", plot_bgcolor="white",
+            font=dict(color=C["text_sub"]), height=360,
+            margin=dict(l=10,r=10,t=40,b=10), showlegend=False,
         )
-        fig_lift.update_xaxes(gridcolor="#1e293b")
-        fig_lift.update_yaxes(gridcolor="#1e293b")
-        st.plotly_chart(fig_lift, use_container_width=True)
+        fig2.update_xaxes(gridcolor="#F1F5F9")
+        fig2.update_yaxes(gridcolor="#F1F5F9")
+        st.plotly_chart(fig2, use_container_width=True)
 
-    st.markdown("---")
-    st.markdown("#### 🔬 Brand × Stage Matrix — Find the Exact Trigger Point for Each Brand")
-
-    brand_stage_rev = mdf_f.groupby(["Brand", "Stage"])["Revenue"].mean().reset_index()
-    pivot_b = brand_stage_rev.pivot(index="Brand", columns="Stage", values="Revenue")
-    fig_bh = go.Figure(data=go.Heatmap(
-        z=pivot_b.values,
-        x=pivot_b.columns.tolist(),
-        y=pivot_b.index.tolist(),
-        colorscale=[[0, "#1a0a0a"], [0.5, "#F5A623"], [1, "#22c55e"]],
-        text=[[f"${v:,.0f}" for v in row] for row in pivot_b.values],
-        texttemplate="%{text}",
-        showscale=True,
-        colorbar=dict(title="Avg Revenue", tickfont=dict(color="#94a3b8")),
+    # Heatmap
+    bpiv = mdf.groupby(["Brand","Stage"])["Revenue"].mean().reset_index()
+    bpw  = bpiv.pivot(index="Brand", columns="Stage", values="Revenue")
+    bpw.columns = [slabel(c) for c in bpw.columns]
+    fig3 = go.Figure(data=go.Heatmap(
+        z=bpw.values, x=bpw.columns.tolist(), y=bpw.index.tolist(),
+        colorscale=[[0,"#F8FAFC"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+        text=[[f"${v:,.0f}" for v in row] for row in bpw.values],
+        texttemplate="%{text}", showscale=True,
     ))
-    fig_bh.update_layout(title="Revenue by Brand × Markdown Stage — Green = Where to Act")
-    st.plotly_chart(styled_chart(fig_bh, height=300), use_container_width=True)
+    fig3.update_layout(title="Average Revenue by Brand and Stage — Darker = Higher Revenue")
+    st.plotly_chart(chart(fig3, height=280), use_container_width=True)
 
     st.markdown("---")
-    st.markdown("#### 📊 Brand Scorecard — Full ROI Picture")
+    st.markdown("#### Brand Summary")
 
-    # Full scorecard table
-    scorecard = brand_perf[["Brand", "Best_Stage", "Hist_Sales", "MD_Sales", "Sales_Lift_Pct", "Best_Revenue"]].copy()
-    scorecard.columns = ["Brand", "Best Stage", "Baseline Sales", "Optimised Sales", "Lift %", "Peak Revenue"]
-    scorecard["Baseline Sales"] = scorecard["Baseline Sales"].round(0)
-    scorecard["Optimised Sales"] = scorecard["Optimised Sales"].round(0)
-    scorecard["Lift %"] = scorecard["Lift %"].round(1)
-    scorecard["Peak Revenue"] = scorecard["Peak Revenue"].round(0)
+    sc = brand_best[["Brand","Best_Stage","Hist_Sales","Opt_Sales","Lift_Pct","Best_Revenue"]].copy()
+    sc.columns = ["Brand","Best Stage","Baseline Avg Sales","Optimised Avg Sales","Sales Increase %","Peak Revenue"]
+    sc["Best Stage"]           = sc["Best Stage"].map({"M1":"Stage 1","M2":"Stage 2","M3":"Stage 3","M4":"Stage 4"})
+    sc["Baseline Avg Sales"]   = sc["Baseline Avg Sales"].round(0)
+    sc["Optimised Avg Sales"]  = sc["Optimised Avg Sales"].round(0)
+    sc["Sales Increase %"]     = sc["Sales Increase %"].round(1)
+    sc["Peak Revenue"]         = sc["Peak Revenue"].round(0)
 
-    st.dataframe(
-        scorecard,
-        use_container_width=True,
-        hide_index=True,
+    st.dataframe(sc, use_container_width=True, hide_index=True,
         column_config={
-            "Peak Revenue": st.column_config.NumberColumn("Peak Revenue", format="$%.0f"),
-            "Lift %": st.column_config.NumberColumn("Sales Lift %", format="+%.1f%%"),
-        },
-    )
+            "Peak Revenue":        st.column_config.NumberColumn("Peak Revenue",        format="$%.0f"),
+            "Sales Increase %":    st.column_config.NumberColumn("Sales Increase %",    format="+%.1f%%"),
+            "Baseline Avg Sales":  st.column_config.NumberColumn("Baseline Avg Sales",  format="%.0f units"),
+            "Optimised Avg Sales": st.column_config.NumberColumn("Optimised Avg Sales", format="%.0f units"),
+        })
 
     st.markdown(f"""
-    <div class='insight-box'>
-      <div class='insight-tag'>🧠 The Brand Allocation Rule</div>
+    <div class='insight'>
+      <div class='insight-label'>Key Takeaway</div>
       <div class='insight-text'>
-        Treat your markdown budget like a venture portfolio.
-        Put the most capital behind <strong>{winner_brand}</strong> — its markdown elasticity
-        is proven. For <strong>{laggard_brand}</strong>, investigate
-        <em>why</em> customers aren't responding: is it price perception,
-        distribution, or product-market fit? No markdown strategy fixes a brand problem.
-        Before you discount, diagnose.
+        Markdown budget should follow response rate, not just brand size.
+        <strong>{top_brand}</strong> delivers the highest return on every percentage
+        point of discount applied. Reviewing brand-level markdown response
+        each quarter will help ensure budget is directed where it has the
+        greatest measurable impact on sales.
       </div>
     </div>
     """, unsafe_allow_html=True)
 
 
-# ──────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 # FOOTER
-# ──────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 st.divider()
-st.markdown("""
-<div style='text-align:center; padding: 12px 0;'>
-  <span style='font-family: Playfair Display, serif; color:#F5A623; font-size:1rem;'>
-    Retail Markdown War Room
-  </span>
-  <span style='color:#334155; margin: 0 8px;'>·</span>
-  <span style='color:#475569; font-size:0.82rem;'>
-    5 stories. Real data. Decisions that move inventory and protect margin.
-  </span>
+st.markdown(f"""
+<div style='text-align:center; color:{C["text_mute"]}; font-size:0.82rem; padding:8px 0;'>
+  Retail Markdown Insights &nbsp;·&nbsp; {len(df):,} products across {len(sel_cats)} categories
 </div>
 """, unsafe_allow_html=True)
