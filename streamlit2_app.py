@@ -16,23 +16,23 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────
-# COLOR PALETTE  — single teal/slate palette
+# COLOR PALETTE  — dark background, blue accent
 # ─────────────────────────────────────────────
 C = {
-    "primary":   "#0F7B6C",
-    "accent":    "#14A698",
-    "warn":      "#B45309",
-    "danger":    "#C0392B",
-    "bg_page":   "#F8FAFC",
-    "bg_card":   "#FFFFFF",
-    "bg_subtle": "#F1F5F9",
-    "border":    "#E2E8F0",
-    "text_main": "#1E293B",
-    "text_sub":  "#475569",
-    "text_mute": "#94A3B8",
+    "primary":   "#3B82F6",   # bright blue — main accent
+    "accent":    "#60A5FA",   # lighter blue — secondary
+    "warn":      "#F59E0B",   # amber — caution
+    "danger":    "#EF4444",   # red — problem state
+    "bg_page":   "#0A0F1E",   # very dark navy — page bg
+    "bg_card":   "#111827",   # dark card bg
+    "bg_subtle": "#1A2235",   # slightly lighter — subtle sections
+    "border":    "#1E2D45",   # dark blue border
+    "text_main": "#F1F5F9",   # near-white — primary text
+    "text_sub":  "#2D4A6E",   # grey — secondary text
+    "text_mute": "#475569",   # muted grey
 }
 
-CHART_COLORS = ["#0F7B6C", "#14A698", "#1FB8A8", "#4DD0C4", "#7DE1D8"]
+CHART_COLORS = ["#3B82F6", "#60A5FA", "#93C5FD", "#1D4ED8", "#BFDBFE"]
 
 st.markdown(f"""
 <style>
@@ -43,6 +43,14 @@ st.markdown(f"""
     background-color: {C['bg_page']};
     color: {C['text_main']};
   }}
+
+  /* Force Streamlit's own backgrounds dark */
+  .stApp {{ background-color: {C['bg_page']} !important; }}
+  section[data-testid="stSidebar"] {{ background-color: #0D1424 !important; }}
+  .stTabs [data-baseweb="tab-list"] {{ background-color: {C['bg_card']} !important; border-radius: 8px; }}
+  .stTabs [data-baseweb="tab"] {{ color: {C['text_sub']} !important; }}
+  .stTabs [aria-selected="true"] {{ color: {C['primary']} !important; }}
+  hr {{ border-color: {C['border']} !important; }}
 
   .page-title {{
     font-size: 1.75rem; font-weight: 700;
@@ -76,25 +84,25 @@ st.markdown(f"""
 
   .box-row {{ display: flex; gap: 12px; margin: 16px 0; }}
   .box-problem {{
-    flex: 1; background: #FEF2F2;
-    border: 1px solid #FECACA; border-radius: 8px; padding: 14px 16px;
+    flex: 1; background: #1F1215;
+    border: 1px solid #3B1A1A; border-radius: 8px; padding: 14px 16px;
   }}
   .box-result {{
-    flex: 1; background: #F0FDF4;
-    border: 1px solid #BBF7D0; border-radius: 8px; padding: 14px 16px;
+    flex: 1; background: #0F1F18;
+    border: 1px solid #1A3A28; border-radius: 8px; padding: 14px 16px;
   }}
   .box-recommend {{
-    flex: 1; background: #EFF6FF;
-    border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px 16px;
+    flex: 1; background: #0F1629;
+    border: 1px solid #1A2A4A; border-radius: 8px; padding: 14px 16px;
   }}
   .box-label {{
     font-size: 0.68rem; font-weight: 700;
     letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 5px;
   }}
   .box-text {{
-    font-size: 0.85rem; line-height: 1.6; color: {C['text_main']};
+    font-size: 0.85rem; line-height: 1.6; color: {C['text_sub']};
   }}
-  .box-text strong {{ font-weight: 600; }}
+  .box-text strong {{ font-weight: 600; color: {C['text_main']}; }}
 
   .insight {{
     background: {C['bg_subtle']};
@@ -115,7 +123,7 @@ st.markdown(f"""
 
   .stage-pill {{
     display: inline-block;
-    background: {C['primary']}18; color: {C['primary']};
+    background: {C['primary']}25; color: {C['accent']};
     font-size: 0.75rem; font-weight: 600;
     padding: 2px 10px; border-radius: 20px; margin: 2px;
   }}
@@ -125,8 +133,11 @@ st.markdown(f"""
     border: 1px solid {C['border']};
     border-radius: 8px; padding: 12px 16px;
   }}
-  [data-testid="stMetricValue"] {{ color: {C['primary']} !important; font-weight: 700; }}
+  [data-testid="stMetricValue"] {{ color: {C['accent']} !important; font-weight: 700; }}
   [data-testid="stMetricLabel"] {{ color: {C['text_sub']}; font-size: 0.8rem; }}
+
+  /* Dataframe dark override */
+  .stDataFrame {{ background: {C['bg_card']} !important; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -135,14 +146,17 @@ st.markdown(f"""
 # ─────────────────────────────────────────────
 def chart(fig, height=360):
     fig.update_layout(
-        paper_bgcolor="white", plot_bgcolor="white",
+        paper_bgcolor=C["bg_card"], plot_bgcolor=C["bg_card"],
         font=dict(color=C["text_sub"], family="Inter", size=12),
         height=height,
         margin=dict(l=10, r=10, t=40, b=10),
         title_font=dict(color=C["text_main"], size=13, family="Inter"),
+        legend=dict(font=dict(color=C["text_sub"])),
     )
-    fig.update_xaxes(gridcolor="#F1F5F9", zeroline=False, linecolor=C["border"])
-    fig.update_yaxes(gridcolor="#F1F5F9", zeroline=False, linecolor=C["border"])
+    fig.update_xaxes(gridcolor=C["border"], zeroline=False,
+                     linecolor=C["border"], tickfont=dict(color=C["text_sub"]))
+    fig.update_yaxes(gridcolor=C["border"], zeroline=False,
+                     linecolor=C["border"], tickfont=dict(color=C["text_sub"]))
     return fig
 
 def slabel(s):
@@ -447,7 +461,7 @@ with t2:
     pw.columns = [slabel(c) for c in pw.columns]
     fig_h = go.Figure(data=go.Heatmap(
         z=pw.values, x=pw.columns.tolist(), y=pw.index.tolist(),
-        colorscale=[[0,"#F1F5F9"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+        colorscale=[[0,"#111827"],[0.5,"#7DE1D8"],[1,C["primary"]]],
         text=[[f"${v:,.0f}" for v in row] for row in pw.values],
         texttemplate="%{text}", showscale=True,
     ))
@@ -531,7 +545,7 @@ with t3:
 
     with col1:
         peak_idx  = disc_total["Revenue"].idxmax()
-        bar_cols3 = [C["primary"] if i == peak_idx else "#CBD5E1" for i in range(len(disc_total))]
+        bar_cols3 = [C["primary"] if i == peak_idx else "#1E3A5F" for i in range(len(disc_total))]
         fig = go.Figure(go.Bar(
             x=disc_total["Disc_Bin"].astype(str), y=disc_total["Revenue"],
             marker_color=bar_cols3,
@@ -630,7 +644,7 @@ with t4:
         st_wide = season_stage.pivot(index="Season", columns="Stage_Label", values="Sell_through")
         fig_h   = go.Figure(data=go.Heatmap(
             z=st_wide.values, x=st_wide.columns.tolist(), y=st_wide.index.tolist(),
-            colorscale=[[0,"#F8FAFC"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+            colorscale=[[0,"#111827"],[0.5,"#7DE1D8"],[1,C["primary"]]],
             text=[[f"{v:.2f}x" for v in row] for row in st_wide.values],
             texttemplate="%{text}", showscale=True,
         ))
@@ -651,7 +665,7 @@ with t4:
             note = "Plan markdown early" if sensitivity > 60 else ("Some flexibility" if sensitivity > 30 else "Flexible timing")
             nc   = C["danger"] if sensitivity > 60 else (C["warn"] if sensitivity > 30 else C["primary"])
             st.markdown(f"""
-            <div style='background:{C["bg_card"]}; border:1px solid {C["border"]};
+            <div style='background:{C["bg_subtle"]}; border:1px solid {C["border"]};
                         border-radius:6px; padding:12px 14px; margin-bottom:8px;'>
               <div style='display:flex; justify-content:space-between;'>
                 <div>
@@ -776,7 +790,7 @@ with t5:
         bar_cols5 = [
             C["primary"] if v == brand_best["Lift_Pct"].max()
             else C["danger"] if v == brand_best["Lift_Pct"].min()
-            else "#94A3B8"
+            else "#2D4A6E"
             for v in brand_best["Lift_Pct"]
         ]
         fig2 = go.Figure(go.Bar(
@@ -788,12 +802,12 @@ with t5:
         fig2.update_layout(
             title="Sales Increase (%) by Brand After Applying Optimal Markdown",
             yaxis_title="Sales Increase %",
-            paper_bgcolor="white", plot_bgcolor="white",
+            paper_bgcolor=C["bg_card"], plot_bgcolor=C["bg_card"],
             font=dict(color=C["text_sub"]), height=360,
             margin=dict(l=10,r=10,t=40,b=10), showlegend=False,
         )
-        fig2.update_xaxes(gridcolor="#F1F5F9")
-        fig2.update_yaxes(gridcolor="#F1F5F9")
+        fig2.update_xaxes(gridcolor=C["border"])
+        fig2.update_yaxes(gridcolor=C["border"])
         st.plotly_chart(fig2, use_container_width=True)
 
     # Heatmap
@@ -802,7 +816,7 @@ with t5:
     bpw.columns = [slabel(c) for c in bpw.columns]
     fig3 = go.Figure(data=go.Heatmap(
         z=bpw.values, x=bpw.columns.tolist(), y=bpw.index.tolist(),
-        colorscale=[[0,"#F8FAFC"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+        colorscale=[[0,"#111827"],[0.5,"#7DE1D8"],[1,C["primary"]]],
         text=[[f"${v:,.0f}" for v in row] for row in bpw.values],
         texttemplate="%{text}", showscale=True,
     ))
