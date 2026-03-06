@@ -38,17 +38,19 @@ st.markdown(f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-  html, body, [class*="css"] {{
+  html, body, [class*="css"],
+  p, span, div, label, li, td, th, h1, h2, h3, h4, h5, h6 {{
     font-family: 'Inter', sans-serif;
-    background-color: {C['bg_page']};
-    color: {C['text_main']};
+    background-color: transparent;
+    color: #FFFFFF !important;
   }}
+  html, body {{ background-color: {C['bg_page']} !important; }}
 
   /* Force Streamlit's own backgrounds dark */
   .stApp {{ background-color: {C['bg_page']} !important; }}
   section[data-testid="stSidebar"] {{ background-color: #0D1424 !important; }}
   .stTabs [data-baseweb="tab-list"] {{ background-color: {C['bg_card']} !important; border-radius: 8px; }}
-  .stTabs [data-baseweb="tab"] {{ color: {C['text_sub']} !important; }}
+  .stTabs [data-baseweb="tab"] {{ color: #FFFFFF !important; }}
   .stTabs [aria-selected="true"] {{ color: {C['primary']} !important; }}
   hr {{ border-color: {C['border']} !important; }}
 
@@ -134,7 +136,7 @@ st.markdown(f"""
     border-radius: 8px; padding: 12px 16px;
   }}
   [data-testid="stMetricValue"] {{ color: {C['accent']} !important; font-weight: 700; }}
-  [data-testid="stMetricLabel"] {{ color: {C['text_sub']}; font-size: 0.8rem; }}
+  [data-testid="stMetricLabel"] {{ color: #FFFFFF !important; font-size: 0.8rem; }}
 
   /* Dataframe dark override */
   .stDataFrame {{ background: {C['bg_card']} !important; }}
