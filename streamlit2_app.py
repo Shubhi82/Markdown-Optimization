@@ -28,7 +28,7 @@ C = {
     "bg_subtle": "#1A2235",   # slightly lighter — subtle sections
     "border":    "#1E2D45",   # dark blue border
     "text_main": "#F1F5F9",   # near-white — primary text
-    "text_sub":  "#2D4A6E",   # grey — secondary text
+    "text_sub":  "#333333",   # grey — secondary text
     "text_mute": "#475569",   # muted grey
 }
 
@@ -84,16 +84,16 @@ st.markdown(f"""
 
   .box-row {{ display: flex; gap: 12px; margin: 16px 0; }}
   .box-problem {{
-    flex: 1; background: #1F1215;
-    border: 1px solid #3B1A1A; border-radius: 8px; padding: 14px 16px;
+    flex: 1; background: #0D0D0D;
+    border: 1px solid #EF4444; border-radius: 8px; padding: 14px 16px;
   }}
   .box-result {{
-    flex: 1; background: #0F1F18;
-    border: 1px solid #1A3A28; border-radius: 8px; padding: 14px 16px;
+    flex: 1; background: #0D0D0D;
+    border: 1px solid #3B82F6; border-radius: 8px; padding: 14px 16px;
   }}
   .box-recommend {{
-    flex: 1; background: #0F1629;
-    border: 1px solid #1A2A4A; border-radius: 8px; padding: 14px 16px;
+    flex: 1; background: #0D0D0D;
+    border: 1px solid #3B82F6; border-radius: 8px; padding: 14px 16px;
   }}
   .box-label {{
     font-size: 0.68rem; font-weight: 700;
@@ -105,8 +105,8 @@ st.markdown(f"""
   .box-text strong {{ font-weight: 600; color: {C['text_main']}; }}
 
   .insight {{
-    background: {C['bg_subtle']};
-    border: 1px solid {C['border']};
+    background: #0D0D0D;
+    border: 1px solid #222222;
     border-left: 3px solid {C['primary']};
     border-radius: 0 8px 8px 0;
     padding: 14px 18px; margin-top: 16px;
@@ -461,7 +461,7 @@ with t2:
     pw.columns = [slabel(c) for c in pw.columns]
     fig_h = go.Figure(data=go.Heatmap(
         z=pw.values, x=pw.columns.tolist(), y=pw.index.tolist(),
-        colorscale=[[0,"#111827"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+        colorscale=[[0,"#000000"],[0.5,"#7DE1D8"],[1,C["primary"]]],
         text=[[f"${v:,.0f}" for v in row] for row in pw.values],
         texttemplate="%{text}", showscale=True,
     ))
@@ -545,7 +545,7 @@ with t3:
 
     with col1:
         peak_idx  = disc_total["Revenue"].idxmax()
-        bar_cols3 = [C["primary"] if i == peak_idx else "#1E3A5F" for i in range(len(disc_total))]
+        bar_cols3 = [C["primary"] if i == peak_idx else "#333333" for i in range(len(disc_total))]
         fig = go.Figure(go.Bar(
             x=disc_total["Disc_Bin"].astype(str), y=disc_total["Revenue"],
             marker_color=bar_cols3,
@@ -644,7 +644,7 @@ with t4:
         st_wide = season_stage.pivot(index="Season", columns="Stage_Label", values="Sell_through")
         fig_h   = go.Figure(data=go.Heatmap(
             z=st_wide.values, x=st_wide.columns.tolist(), y=st_wide.index.tolist(),
-            colorscale=[[0,"#111827"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+            colorscale=[[0,"#000000"],[0.5,"#7DE1D8"],[1,C["primary"]]],
             text=[[f"{v:.2f}x" for v in row] for row in st_wide.values],
             texttemplate="%{text}", showscale=True,
         ))
@@ -790,7 +790,7 @@ with t5:
         bar_cols5 = [
             C["primary"] if v == brand_best["Lift_Pct"].max()
             else C["danger"] if v == brand_best["Lift_Pct"].min()
-            else "#2D4A6E"
+            else "#333333"
             for v in brand_best["Lift_Pct"]
         ]
         fig2 = go.Figure(go.Bar(
@@ -816,7 +816,7 @@ with t5:
     bpw.columns = [slabel(c) for c in bpw.columns]
     fig3 = go.Figure(data=go.Heatmap(
         z=bpw.values, x=bpw.columns.tolist(), y=bpw.index.tolist(),
-        colorscale=[[0,"#111827"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+        colorscale=[[0,"#000000"],[0.5,"#7DE1D8"],[1,C["primary"]]],
         text=[[f"${v:,.0f}" for v in row] for row in bpw.values],
         texttemplate="%{text}", showscale=True,
     ))
