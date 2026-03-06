@@ -78,7 +78,7 @@ st.markdown(f"""
     color: {C['text_main']}; margin-bottom: 8px; line-height: 1.4;
   }}
   .story-body {{
-    font-size: 0.9rem; color: {C['text_sub']}; line-height: 1.7;
+    font-size: 0.9rem; color: #FFFFFF; line-height: 1.7;
   }}
   .story-body strong {{ color: {C['text_main']}; }}
 
@@ -100,7 +100,7 @@ st.markdown(f"""
     letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 5px;
   }}
   .box-text {{
-    font-size: 0.85rem; line-height: 1.6; color: {C['text_sub']};
+    font-size: 0.85rem; line-height: 1.6; color: #FFFFFF;
   }}
   .box-text strong {{ font-weight: 600; color: {C['text_main']}; }}
 
@@ -117,7 +117,7 @@ st.markdown(f"""
     color: {C['primary']}; margin-bottom: 4px;
   }}
   .insight-text {{
-    font-size: 0.88rem; color: {C['text_sub']}; line-height: 1.6;
+    font-size: 0.88rem; color: #FFFFFF; line-height: 1.6;
   }}
   .insight-text strong {{ color: {C['text_main']}; }}
 
