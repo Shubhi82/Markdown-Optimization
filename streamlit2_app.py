@@ -149,16 +149,26 @@ st.markdown(f"""
 def chart(fig, height=360):
     fig.update_layout(
         paper_bgcolor=C["bg_card"], plot_bgcolor=C["bg_card"],
-        font=dict(color=C["text_sub"], family="Inter", size=12),
+        font=dict(color="#FFFFFF", family="Inter", size=12),
         height=height,
         margin=dict(l=10, r=10, t=40, b=10),
-        title_font=dict(color=C["text_main"], size=13, family="Inter"),
-        legend=dict(font=dict(color=C["text_sub"])),
+        title_font=dict(color="#FFFFFF", size=13, family="Inter"),
+        legend=dict(font=dict(color="#FFFFFF"), bgcolor="rgba(0,0,0,0)"),
     )
-    fig.update_xaxes(gridcolor=C["border"], zeroline=False,
-                     linecolor=C["border"], tickfont=dict(color=C["text_sub"]))
-    fig.update_yaxes(gridcolor=C["border"], zeroline=False,
-                     linecolor=C["border"], tickfont=dict(color=C["text_sub"]))
+    fig.update_xaxes(
+        gridcolor=C["border"], zeroline=False,
+        linecolor="#444444",
+        tickfont=dict(color="#FFFFFF"),
+        title_font=dict(color="#FFFFFF"),
+    )
+    fig.update_yaxes(
+        gridcolor=C["border"], zeroline=False,
+        linecolor="#444444",
+        tickfont=dict(color="#FFFFFF"),
+        title_font=dict(color="#FFFFFF"),
+    )
+    # Force all text on traces white
+    fig.update_traces(textfont_color="#FFFFFF")
     return fig
 
 def slabel(s):
@@ -349,7 +359,8 @@ with t1:
 
         fig2 = px.bar(lift_df, x="Category", y="Sales Increase %",
                       title="Sales Increase (%) After Applying Optimal Markdown — by Category",
-                      color_discrete_sequence=[C["primary"]],
+                      color="Category",
+                      color_discrete_map={"Bodycare":"#22C55E","Makeup":"#3B82F6","Skincare":"#94A3B8"},
                       text=lift_df["Sales Increase %"].apply(lambda x: f"+{x:.0f}%"))
         fig2.update_traces(textposition="outside")
         st.plotly_chart(chart(fig2), use_container_width=True)
@@ -426,7 +437,7 @@ with t2:
         fig = px.line(sc, x="Stage_Label", y="Revenue", color="Category",
                       markers=True,
                       title="Average Revenue at Each Markdown Stage — by Category",
-                      color_discrete_sequence=CHART_COLORS)
+                      color_discrete_map={"Bodycare":"#22C55E","Makeup":"#3B82F6","Skincare":"#94A3B8"})
         fig.add_vrect(x0="Stage 2", x1="Stage 3",
                       fillcolor=C["primary"], opacity=0.06, layer="below", line_width=0,
                       annotation_text="Recommended window",
@@ -463,7 +474,7 @@ with t2:
     pw.columns = [slabel(c) for c in pw.columns]
     fig_h = go.Figure(data=go.Heatmap(
         z=pw.values, x=pw.columns.tolist(), y=pw.index.tolist(),
-        colorscale=[[0,"#000000"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+        colorscale=[[0,"#000000"],[0.4,"#1E3A5F"],[1,"#3B82F6"]],
         text=[[f"${v:,.0f}" for v in row] for row in pw.values],
         texttemplate="%{text}", showscale=True,
     ))
@@ -637,7 +648,7 @@ with t4:
         )
         fig = px.line(season_stage, x="Stage_Label", y="Revenue", color="Season",
                       markers=True, title="Average Revenue by Season and Markdown Stage",
-                      color_discrete_sequence=CHART_COLORS)
+                      color_discrete_map={"Rainy":"#22C55E","Spring":"#F472B6","Summer":"#3B82F6","Winter":"#FFFFFF"})
         fig.update_traces(line_width=2, marker_size=8)
         fig.update_layout(xaxis_title="Stage", yaxis_title="Avg Revenue")
         st.plotly_chart(chart(fig, height=360), use_container_width=True)
@@ -646,7 +657,7 @@ with t4:
         st_wide = season_stage.pivot(index="Season", columns="Stage_Label", values="Sell_through")
         fig_h   = go.Figure(data=go.Heatmap(
             z=st_wide.values, x=st_wide.columns.tolist(), y=st_wide.index.tolist(),
-            colorscale=[[0,"#000000"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+            colorscale=[[0,"#000000"],[0.4,"#1E3A5F"],[1,"#3B82F6"]],
             text=[[f"{v:.2f}x" for v in row] for row in st_wide.values],
             texttemplate="%{text}", showscale=True,
         ))
@@ -691,7 +702,7 @@ with t4:
         fig_sc = px.bar(sc, x="Season", y="Revenue", color="Category",
                         barmode="group",
                         title="Average Revenue by Season and Category",
-                        color_discrete_sequence=CHART_COLORS)
+                        color_discrete_map={"Bodycare":"#22C55E","Makeup":"#FFFFFF","Skincare":"#93C5FD"})
         fig_sc.update_layout(yaxis_title="Avg Revenue")
         st.plotly_chart(chart(fig_sc, height=300), use_container_width=True)
 
@@ -801,16 +812,8 @@ with t5:
             text=[f"+{v:.0f}%" for v in brand_best["Lift_Pct"]],
             textposition="outside",
         ))
-        fig2.update_layout(
-            title="Sales Increase (%) by Brand After Applying Optimal Markdown",
-            yaxis_title="Sales Increase %",
-            paper_bgcolor=C["bg_card"], plot_bgcolor=C["bg_card"],
-            font=dict(color=C["text_sub"]), height=360,
-            margin=dict(l=10,r=10,t=40,b=10), showlegend=False,
-        )
-        fig2.update_xaxes(gridcolor=C["border"])
-        fig2.update_yaxes(gridcolor=C["border"])
-        st.plotly_chart(fig2, use_container_width=True)
+        fig2.update_layout(yaxis_title="Sales Increase %", showlegend=False)
+        st.plotly_chart(chart(fig2), use_container_width=True)
 
     # Heatmap
     bpiv = mdf.groupby(["Brand","Stage"])["Revenue"].mean().reset_index()
@@ -818,7 +821,7 @@ with t5:
     bpw.columns = [slabel(c) for c in bpw.columns]
     fig3 = go.Figure(data=go.Heatmap(
         z=bpw.values, x=bpw.columns.tolist(), y=bpw.index.tolist(),
-        colorscale=[[0,"#000000"],[0.5,"#7DE1D8"],[1,C["primary"]]],
+        colorscale=[[0,"#000000"],[0.4,"#1E3A5F"],[1,"#3B82F6"]],
         text=[[f"${v:,.0f}" for v in row] for row in bpw.values],
         texttemplate="%{text}", showscale=True,
     ))
